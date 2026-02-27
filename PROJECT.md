@@ -32,6 +32,12 @@
 | **Não alterar outros projetos** | Agentes-SaaS, CRM-Imobliaria, Devocionais e Agente-Instagram estão no workspace para **conhecer e replicar**. **Nada deve ser alterado** no código desses projetos. |
 | **Reaplicar** | O que for útil neles deve ser **reaplicado** no Projeto-X (reimplementado ou adaptado), nunca editado na origem. |
 
+**Implantação — tudo automático:**
+
+| Regra | Descrição |
+|-------|-----------|
+| **Sem comandos manuais** | Não migrar nem rodar nada em command/shell. Banco de dados (schema, seed) e o que for necessário devem estar prontos e **rodar automaticamente na implantação**. |
+
 *Estas regras não serão repetidas em outros documentos. São a base do fluxo de trabalho. Detalhes em [PRODUTO_PLATAFORMA_IMOBILIARIA.md](./PRODUTO_PLATAFORMA_IMOBILIARIA.md).*
 
 ---

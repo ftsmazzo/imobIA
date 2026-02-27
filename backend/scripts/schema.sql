@@ -1,11 +1,5 @@
--- =============================================================================
--- Plataforma Imobiliária — Draft do modelo de dados unificado
--- Projeto-X. Multi-tenant: todas as tabelas de negócio possuem tenant_id.
--- =============================================================================
-
--- -----------------------------------------------------------------------------
--- Núcleo: conta, usuários, planos, agente
--- -----------------------------------------------------------------------------
+-- Copiado de docs/schema/schema.sql para execução automática no deploy.
+-- Manter em sync com docs/schema/schema.sql quando alterar o modelo.
 
 CREATE TABLE IF NOT EXISTS plans (
   id SERIAL PRIMARY KEY,
@@ -87,10 +81,6 @@ CREATE TABLE IF NOT EXISTS agent_configs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
--- -----------------------------------------------------------------------------
--- CRM: imóveis, contatos, pipeline, tarefas
--- -----------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS properties (
   id SERIAL PRIMARY KEY,
@@ -195,10 +185,6 @@ CREATE TABLE IF NOT EXISTS tasks (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- -----------------------------------------------------------------------------
--- Interesse: contato ↔ imóvel (opcional, para pipeline por imóvel)
--- -----------------------------------------------------------------------------
-
 CREATE TABLE IF NOT EXISTS interests (
   id SERIAL PRIMARY KEY,
   tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -209,10 +195,6 @@ CREATE TABLE IF NOT EXISTS interests (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
--- -----------------------------------------------------------------------------
--- Disparos: listas, disparos, dispatch_contacts
--- -----------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS contact_lists (
   id SERIAL PRIMARY KEY,
@@ -260,10 +242,6 @@ CREATE TABLE IF NOT EXISTS dispatch_contacts (
   UNIQUE(dispatch_id, contact_id)
 );
 
--- -----------------------------------------------------------------------------
--- Canal / Conversa: WhatsApp, agente
--- -----------------------------------------------------------------------------
-
 CREATE TABLE IF NOT EXISTS conversations (
   id SERIAL PRIMARY KEY,
   tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -287,10 +265,6 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   metadata JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
--- -----------------------------------------------------------------------------
--- Site e agenda
--- -----------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS site_configs (
   id SERIAL PRIMARY KEY,
@@ -319,10 +293,6 @@ CREATE TABLE IF NOT EXISTS scheduled_visits (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
--- -----------------------------------------------------------------------------
--- Índices (principais)
--- -----------------------------------------------------------------------------
 
 CREATE INDEX IF NOT EXISTS idx_tenants_plan ON tenants(plan_id);
 CREATE INDEX IF NOT EXISTS idx_tenants_status ON tenants(status);

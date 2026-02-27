@@ -36,14 +36,7 @@ postgresql://postgres:SUA_SENHA@postgres:5432/plataforma_imobiliaria
 | `PORT` | Não | Porta HTTP (padrão: 3000) | `3000` |
 | `NODE_ENV` | Não | `development` ou `production` | `production` |
 
-**Após o primeiro deploy:** rodar migrations/seed no banco (uma vez). No EasyPanel você pode usar "Execute command" no container do backend, por exemplo:
-
-```bash
-npx drizzle-kit push
-npx tsx scripts/seed.ts
-```
-
-Ou aplicar o SQL manual: `docs/schema/schema.sql` e depois inserir os planos.
+**Schema e seed:** rodam **automaticamente** no startup do container do backend (entrypoint). Não é necessário rodar nenhum comando em shell.
 
 ---
 

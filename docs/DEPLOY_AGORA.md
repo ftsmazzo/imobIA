@@ -102,41 +102,18 @@ Salve e faça o **Deploy** (ou “Build and deploy”) de cada um.
 ## 5. Ordem recomendada
 
 1. **PostgreSQL** — subir primeiro (se for no EasyPanel).
-2. **Backend** — subir com `DATABASE_URL` preenchido.
-3. **Aplicar schema e seed no banco** (uma vez) — ver passo 6.
-4. **Frontend** — build com `VITE_API_URL` e subir.
-5. **MCP Server** — subir.
+2. **Backend** — subir com `DATABASE_URL`; schema e seed rodam sozinhos na implantação.
+3. **Frontend** — build com `VITE_API_URL` e subir.
+4. **MCP Server** — subir.
 
 ---
 
-## 6. Aplicar tabelas e dados iniciais no banco (uma vez)
+## 6. Banco de dados (automático)
 
-O container do backend em produção **não** inclui `drizzle-kit` nem o script de seed. Use uma das opções abaixo.
+O **backend** aplica o schema e o seed **automaticamente** ao subir. Não é necessário rodar migração nem seed em shell ou comando.
 
-**Opção A — Na sua máquina (recomendado)**  
-Se o PostgreSQL do EasyPanel tiver **acesso externo** (IP/porta ou túnel), na pasta do Projeto-X:
-
-```bash
-cd backend
-cp .env.example .env
-# Edite .env e coloque a mesma DATABASE_URL do EasyPanel (use o IP/host público do Postgres)
-npm install
-npm run db:push
-npm run db:seed
-```
-
-**Opção B — SQL direto no banco**  
-No EasyPanel, use o cliente/console do PostgreSQL (ou pgAdmin, DBeaver, etc.) conectado ao banco do projeto:
-
-1. Execute todo o conteúdo do arquivo **`docs/schema/schema.sql`** (cria as tabelas).
-2. Insira os planos iniciais com:
-
-```sql
-INSERT INTO plans (name, description, price_monthly, max_properties, max_contacts, max_dispatches_per_month, max_agents, max_users, is_active)
-VALUES
-  ('Corretor', 'Para corretores autônomos', 9900, 50, 500, 1000, 1, 1, true),
-  ('Imobiliária', 'Para imobiliárias', 29900, 500, 5000, 5000, 3, 10, true);
-```
+- Na **primeira** subida do container, o entrypoint executa `migrate.mjs` (aplica `scripts/schema.sql`) e em seguida `seed.mjs` (insere os planos Corretor e Imobiliária).
+- Em subidas seguintes, o script é idempotente (tabelas já existem, planos já existem → nada é duplicado).
 
 ---
 
@@ -157,6 +134,6 @@ VALUES
 | Backend            | Variável `DATABASE_URL`; porta 3000; depois rodar schema + seed |
 | Frontend           | Build arg `VITE_API_URL` = URL do backend; porta 80 |
 | MCP Server         | Nada obrigatório; porta 8000 |
-| Schema + seed      | Uma vez no banco (drizzle-kit push + seed ou SQL manual) |
+| Schema + seed      | Automático no startup do backend (nada a rodar em shell) |
 
 Se algo falhar no build ou no deploy, confira os **logs** do serviço no EasyPanel (build e runtime).

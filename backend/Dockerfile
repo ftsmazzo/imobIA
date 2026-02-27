@@ -25,7 +25,9 @@ COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev 2>/dev/null || npm install --omit=dev
 
 COPY --from=builder /app/dist ./dist
+COPY scripts ./scripts
+RUN chmod +x scripts/entrypoint.sh
 
 EXPOSE 3000
 
-CMD ["node", "dist/index.js"]
+ENTRYPOINT ["/bin/sh", "scripts/entrypoint.sh"]

@@ -4,6 +4,7 @@ API, webhooks, LangGraph e integrações. Todo código aqui faz parte do **Proje
 
 ## Responsabilidade
 
+- **Startup:** ao subir o container, o entrypoint aplica o schema (`scripts/schema.sql`) e o seed (planos iniciais) automaticamente. Nada precisa ser rodado em shell.
 - API (REST ou tRPC): auth, tenants, planos, CRM (imóveis, contatos, pipeline, tarefas), disparos, listas/tags, site config, agenda
 - Webhooks: Evolution API, ChatWoot
 - Orquestração do agente: LangGraph; chamada ao MCP Server para tools
