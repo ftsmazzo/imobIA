@@ -166,8 +166,9 @@ O arquivo **`docs/schema/schema.sql`** contém o draft do modelo unificado em SQ
 
 ### Frontend
 - [x] Projeto React + TypeScript + Vite; config runtime (VITE_API_URL)
-- [ ] Login e layout base
-- [ ] Páginas: Dashboard, Imóveis, Contatos, Pipeline, Tarefas (mínimo)
+- [x] Login e layout base (sidebar, rotas protegidas)
+- [x] Páginas: Dashboard, Planos, Imóveis, Contatos (listagem)
+- [ ] Pipeline, Tarefas (mínimo); configuração do agente
 - [ ] Configuração do agente (prompt, nome) e conexão WhatsApp (QR)
 
 ### Integração e deploy
