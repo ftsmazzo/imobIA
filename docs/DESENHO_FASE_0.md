@@ -144,36 +144,57 @@ O arquivo **`docs/schema/schema.sql`** contém o draft do modelo unificado em SQ
 - [x] Schema draft (schema.sql) criado
 - [x] Estrutura de pastas `backend/`, `mcp-server/`, `frontend/` criada
 - [x] README.md do Projeto-X com visão e links
-- [ ] Repositórios GitHub (ou monorepo único) definidos e criados
-- [ ] EasyPanel: projeto criado; PostgreSQL (e Redis se necessário) provisionado
+- [x] Repositórios GitHub (monorepo imobIA) definidos e criados
+- [x] EasyPanel: projeto criado; PostgreSQL provisionado; backend, frontend, mcp-server online
 
 ### Backend
-- [ ] Projeto Node.js + TypeScript; dependências (express ou fastify, orm, etc.)
-- [ ] Conexão PostgreSQL; schema aplicado (migrations a partir do schema.sql)
+- [x] Projeto Node.js + TypeScript; Express, Drizzle
+- [x] Conexão PostgreSQL; schema aplicado no deploy (entrypoint); seed (plans)
 - [ ] Auth (login, JWT ou sessão); middleware tenant
-- [ ] CRUD mínimo: tenants, users, plans (seed)
+- [ ] CRUD mínimo: tenants, users (plans já com seed)
 - [ ] CRUD: properties, property_photos, contacts, tags, pipeline_stages, tasks
 - [ ] API de listas e disparos (estrutura)
 - [ ] Webhook Evolution/ChatWoot (receber mensagem)
 - [ ] Integração LangGraph + MCP (chamar tools do mcp-server)
 
 ### MCP Server
-- [ ] Projeto Python; FastMCP instalado
-- [ ] Tool: buscar imóveis (filtros)
+- [x] Projeto Python; FastMCP instalado
+- [x] Tool: buscar imóveis (search_properties, get_property)
 - [ ] Tool: buscar contato
 - [ ] Tool: agendar visita (ou registrar interesse)
-- [ ] Expor servidor (stdio ou HTTP) para o backend chamar
+- [x] Servidor HTTP (porta 8000) para o backend chamar
 
 ### Frontend
-- [ ] Projeto React (ou Next.js) + TypeScript + Vite
+- [x] Projeto React + TypeScript + Vite; config runtime (VITE_API_URL)
 - [ ] Login e layout base
 - [ ] Páginas: Dashboard, Imóveis, Contatos, Pipeline, Tarefas (mínimo)
 - [ ] Configuração do agente (prompt, nome) e conexão WhatsApp (QR)
 
 ### Integração e deploy
-- [ ] Variáveis de ambiente documentadas (.env.example em cada pasta)
-- [ ] Dockerfile (ou build) para backend, mcp-server, frontend
-- [ ] Deploy no EasyPanel (backend + mcp-server + frontend + PostgreSQL)
+- [x] Variáveis de ambiente documentadas (docs/ENV.md, .env.example onde aplicável)
+- [x] Dockerfile para backend, mcp-server, frontend (contexto raiz)
+- [x] Deploy no EasyPanel (backend + frontend + mcp-server + PostgreSQL)
+
+---
+
+## 🚀 Próximos passos (após tudo online)
+
+Ordem sugerida:
+
+1. **Backend — Auth e núcleo**  
+   Login (JWT ou sessão), middleware tenant, CRUD tenants/users (além do seed de plans). Base para o restante.
+
+2. **Backend — CRUD CRM**  
+   Rotas para properties, contacts, pipeline_stages, tags, tasks (e property_photos). Frontend e MCP vão consumir.
+
+3. **Frontend — Layout e listagem**  
+   Login, layout base (sidebar/menu), página que lista planos (já tem `/api/plans`) e depois Imóveis/Contatos.
+
+4. **Integração**  
+   Webhook Evolution/ChatWoot → LangGraph → chamar MCP (search_properties, get_property, etc.).
+
+5. **MCP**  
+   Tools adicionais: buscar contato, agendar visita (quando o backend tiver as tabelas/APIs).
 
 ---
 
@@ -182,7 +203,8 @@ O arquivo **`docs/schema/schema.sql`** contém o draft do modelo unificado em SQ
 | Data | Alteração |
 |------|-----------|
 | 2026-02-26 | Criação. Modelo de dados unificado (resumo), estrutura de repos/serviços, checklist de kickoff. |
+| 2026-02-27 | Checklist atualizado (deploy e Dockerfiles concluídos); seção "Próximos passos" adicionada. |
 
 ---
 
-*Última atualização: 2026-02-26*
+*Última atualização: 2026-02-27*
