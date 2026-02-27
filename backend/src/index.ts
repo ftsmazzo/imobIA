@@ -6,6 +6,11 @@ import { plans } from "./db/schema.js";
 import authRoutes from "./routes/auth.js";
 import tenantsRoutes from "./routes/tenants.js";
 import usersRoutes from "./routes/users.js";
+import pipelineStagesRoutes from "./routes/pipeline-stages.js";
+import propertiesRoutes from "./routes/properties.js";
+import tagsRoutes from "./routes/tags.js";
+import contactsRoutes from "./routes/contacts.js";
+import tasksRoutes from "./routes/tasks.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -48,10 +53,13 @@ app.get("/api/plans", async (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/tenants", tenantsRoutes);
 app.use("/api/users", usersRoutes);
+app.use("/api/pipeline-stages", pipelineStagesRoutes);
+app.use("/api/properties", propertiesRoutes);
+app.use("/api/tags", tagsRoutes);
+app.use("/api/contacts", contactsRoutes);
+app.use("/api/tasks", tasksRoutes);
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Backend rodando em http://0.0.0.0:${PORT}`);
-  console.log("Health: GET /api/health | Planos: GET /api/plans");
-  console.log("Auth: POST /api/auth/login, /api/auth/register, GET /api/auth/me");
-  console.log("Tenants: GET/PATCH /api/tenants | Users: GET/POST/PATCH /api/users");
+  console.log("CRM: /api/pipeline-stages, /api/properties, /api/tags, /api/contacts, /api/tasks");
 });

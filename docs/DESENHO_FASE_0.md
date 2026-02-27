@@ -152,7 +152,7 @@ O arquivo **`docs/schema/schema.sql`** contém o draft do modelo unificado em SQ
 - [x] Conexão PostgreSQL; schema aplicado no deploy (entrypoint); seed (plans)
 - [ ] Auth (login, JWT ou sessão); middleware tenant
 - [ ] CRUD mínimo: tenants, users (plans já com seed)
-- [ ] CRUD: properties, property_photos, contacts, tags, pipeline_stages, tasks
+- [x] CRUD: properties, property_photos, contacts, tags, pipeline_stages, tasks
 - [ ] API de listas e disparos (estrutura)
 - [ ] Webhook Evolution/ChatWoot (receber mensagem)
 - [ ] Integração LangGraph + MCP (chamar tools do mcp-server)

@@ -44,7 +44,12 @@ try {
        VALUES ($1, $2, $3, $4, $5)`,
       [tenantId, "admin@demo.com", "Admin Demo", passwordHash, "admin"]
     );
-    console.log("[seed] Tenant e usuário admin criados. Login: admin@demo.com / admin123");
+    await client.query(
+      `INSERT INTO pipeline_stages (tenant_id, name, slug, sort_order)
+       VALUES ($1, 'Lead', 'lead', 0), ($1, 'Qualificado', 'qualificado', 1), ($1, 'Visita', 'visita', 2), ($1, 'Proposta', 'proposta', 3), ($1, 'Fechado', 'fechado', 4)`,
+      [tenantId]
+    );
+    console.log("[seed] Tenant, admin e etapas do pipeline criados. Login: admin@demo.com / admin123");
   } else {
     console.log("[seed] Usuários já existem.");
   }
