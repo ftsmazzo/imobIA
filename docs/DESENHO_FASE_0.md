@@ -154,8 +154,8 @@ O arquivo **`docs/schema/schema.sql`** contém o draft do modelo unificado em SQ
 - [ ] CRUD mínimo: tenants, users (plans já com seed)
 - [x] CRUD: properties, property_photos, contacts, tags, pipeline_stages, tasks
 - [ ] API de listas e disparos (estrutura)
-- [ ] Webhook Evolution/ChatWoot (receber mensagem)
-- [ ] Integração LangGraph + MCP (chamar tools do mcp-server)
+- [x] Webhook (POST /api/webhook/message) recebe mensagem e chama MCP
+- [ ] Integração Evolution/ChatWoot (payload específico); LangGraph (opcional)
 
 ### MCP Server
 - [x] Projeto Python; FastMCP instalado

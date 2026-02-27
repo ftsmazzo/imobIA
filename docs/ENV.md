@@ -34,6 +34,7 @@ postgresql://postgres:SUA_SENHA@postgres:5432/plataforma_imobiliaria
 |----------|-------------|-----------|---------|
 | `DATABASE_URL` | Sim | Connection string do PostgreSQL | `postgresql://user:pass@postgres:5432/plataforma_imobiliaria` |
 | `JWT_SECRET` | Sim (produção) | Chave para assinar tokens JWT (login) | string longa e aleatória |
+| `MCP_SERVER_URL` | Sim (para webhook) | URL do MCP server (backend chama as tools aqui) | `http://mcp-server:8000` (host interno Docker) |
 | `PORT` | Não | Porta HTTP (padrão: 3000) | `3000` |
 | `NODE_ENV` | Não | `development` ou `production` | `production` |
 
