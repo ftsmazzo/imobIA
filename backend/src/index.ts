@@ -3,14 +3,21 @@ import express from "express";
 import { eq } from "drizzle-orm";
 import { db } from "./db/index.js";
 import { plans } from "./db/schema.js";
+import authRoutes from "./routes/auth.js";
+import tenantsRoutes from "./routes/tenants.js";
+import usersRoutes from "./routes/users.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
+if (!process.env.JWT_SECRET && process.env.NODE_ENV === "production") {
+  console.warn("JWT_SECRET não definido em produção. Defina a variável no EasyPanel.");
+}
+
 // CORS: frontend (outro domínio) precisa chamar a API pelo navegador
 app.use((_req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   if (_req.method === "OPTIONS") {
     res.sendStatus(204);
@@ -38,8 +45,13 @@ app.get("/api/plans", async (_req, res) => {
   }
 });
 
+app.use("/api/auth", authRoutes);
+app.use("/api/tenants", tenantsRoutes);
+app.use("/api/users", usersRoutes);
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Backend rodando em http://0.0.0.0:${PORT}`);
-  console.log("Health: GET /api/health");
-  console.log("Planos: GET /api/plans");
+  console.log("Health: GET /api/health | Planos: GET /api/plans");
+  console.log("Auth: POST /api/auth/login, /api/auth/register, GET /api/auth/me");
+  console.log("Tenants: GET/PATCH /api/tenants | Users: GET/POST/PATCH /api/users");
 });

@@ -33,32 +33,28 @@ postgresql://postgres:SUA_SENHA@postgres:5432/plataforma_imobiliaria
 | Variável | Obrigatória | Descrição | Exemplo |
 |----------|-------------|-----------|---------|
 | `DATABASE_URL` | Sim | Connection string do PostgreSQL | `postgresql://user:pass@postgres:5432/plataforma_imobiliaria` |
+| `JWT_SECRET` | Sim (produção) | Chave para assinar tokens JWT (login) | string longa e aleatória |
 | `PORT` | Não | Porta HTTP (padrão: 3000) | `3000` |
 | `NODE_ENV` | Não | `development` ou `production` | `production` |
 
-**Schema e seed:** rodam **automaticamente** no startup do container do backend (entrypoint). Não é necessário rodar nenhum comando em shell.
+**Schema e seed:** rodam **automaticamente** no startup do container (entrypoint). Seed cria planos e, se não houver usuários, um tenant + admin (admin@demo.com / admin123). Defina **JWT_SECRET** no EasyPanel em produção.
 
 ---
 
 ## Frontend
 
-O frontend é **build estático** (Vite). A URL do backend é definida **no momento do build** (não em runtime).
+A URL do backend é lida **em runtime**: ao subir o container, um script gera `/config.js` a partir da variável `VITE_API_URL`. Basta definir a variável no EasyPanel (variável de ambiente do **container**, não build arg) e reiniciar o serviço — não precisa refazer o build.
 
 | Variável | Obrigatória | Descrição | Exemplo |
 |----------|-------------|-----------|---------|
-| `VITE_API_URL` | Sim (no build) | **URL pública** do backend (a que o usuário acessa no navegador) | `https://api.seudominio.com` |
+| `VITE_API_URL` | Sim | **URL pública** do backend (sem barra no final) | `https://imobia-backend.90qhxz.easypanel.host` |
 
-No **EasyPanel**, configure como **Build Argument**:
+No **EasyPanel**, configure como **variável de ambiente** do serviço frontend:
 
 - Nome: `VITE_API_URL`
-- Valor: **a URL pública do backend** — ou seja, o endereço que você usa no navegador para abrir a API do backend (com domínio e porta, se não for 80/443).
+- Valor: **a URL pública do backend** (ex.: `https://imobia-backend.90qhxz.easypanel.host`), **sem barra no final**.
 
-**Importante:** O frontend roda **no navegador do usuário**. As chamadas à API são feitas **pelo navegador**, não pelo servidor. Por isso:
-
-- **Use a URL pública do backend** (ex.: `https://backend.seudominio.com` ou `https://api.imobia.com`).
-- **Não use** o host interno do Docker (ex.: `http://imobia_backend:3000` ou `http://backend:3000`) — o navegador não resolve esses nomes e aparece "Backend inacessível".
-
-Depois de alterar `VITE_API_URL`, é preciso **refazer o build e o deploy** do frontend (o valor é fixado no build).
+**Importante:** O frontend roda **no navegador do usuário**. As chamadas à API são feitas **pelo navegador**. Use sempre a URL pública do backend. Não use host interno (ex.: `http://imobia_backend:3000`) — o navegador não resolve e aparece "Backend inacessível".
 
 ---
 
@@ -78,7 +74,7 @@ Por enquanto o MCP server não precisa de banco; no futuro pode receber `BACKEND
 |---------|----------------------|
 | **PostgreSQL** | (criar usuário/senha/banco e anotar para o backend) |
 | **backend** | `DATABASE_URL`, `PORT` (opcional), `NODE_ENV` (opcional) |
-| **frontend** | Build arg: `VITE_API_URL` = URL do backend |
+| **frontend** | Variável de ambiente: `VITE_API_URL` = URL pública do backend (runtime) |
 | **mcp-server** | `PORT` (opcional, padrão 8000) |
 
 ---
