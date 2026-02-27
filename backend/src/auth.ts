@@ -24,5 +24,7 @@ export function signToken(payload: JwtPayload): string {
 }
 
 export function verifyToken(token: string): JwtPayload {
-  return jwt.verify(token, JWT_SECRET) as JwtPayload;
+  const decoded = jwt.verify(token, JWT_SECRET);
+  if (typeof decoded === "string") throw new Error("Invalid token");
+  return decoded as unknown as JwtPayload;
 }
