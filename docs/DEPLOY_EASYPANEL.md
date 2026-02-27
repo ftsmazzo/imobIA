@@ -30,22 +30,18 @@ O assistente fará **commit e push** no GitHub depois que você criar o reposit�
 2. Adicione o **PostgreSQL** (um serviço de banco) se ainda não tiver. Anote o host interno (ex.: `postgres`), usuário, senha e nome do banco. Monte a **DATABASE_URL** para o backend.
 3. Crie **três serviços de aplicação**, cada um conectado ao **mesmo repositório** do GitHub, mas com **contexto (pasta) e Dockerfile** diferentes:
 
-| Serviço   | Nome no EasyPanel | Pasta / Contexto | Dockerfile      | Porta |
-|-----------|-------------------|------------------|------------------|-------|
-| Backend   | `backend`         | `backend`        | `backend/Dockerfile` | 3000 |
-| Frontend  | `frontend`        | `frontend`       | `frontend/Dockerfile`| 80   |
-| MCP Server| `mcp-server`      | `mcp-server`     | `mcp-server/Dockerfile`| 8000 |
+| Serviço   | Nome no EasyPanel | Contexto (build) | Dockerfile           | Porta |
+|-----------|-------------------|------------------|----------------------|-------|
+| Backend   | `backend`         | **raiz do repo** | `backend/Dockerfile` | 3000  |
+| Frontend  | `frontend`        | **raiz do repo** | `frontend/Dockerfile`| 80    |
+| MCP Server| `mcp-server`       | **raiz do repo** | `mcp-server/Dockerfile` | 8000 |
 
 4. Em cada serviço:
-   - **Build Context:** raiz do repositório (ou a pasta do serviço, conforme o EasyPanel permitir).
-   - **Dockerfile path:** `backend/Dockerfile`, `frontend/Dockerfile`, `mcp-server/Dockerfile` (ajuste se o EasyPanel pedir caminho a partir da raiz).
-   - **Portas:** exponha a porta indicada (3000, 80, 8000).
+   - **Build Context:** **raiz do repositório** (`.` ou o diretório onde está o clone).
+   - **Dockerfile path:** exatamente `backend/Dockerfile`, `frontend/Dockerfile`, `mcp-server/Dockerfile` (com **hífen** em `mcp-server`, não `mcp~server`).
+   - **Portas:** 3000, 80, 8000.
 
-Se o EasyPanel pedir “pasta do projeto” ou “context”, use:
-- Backend: pasta `backend` (e Dockerfile `Dockerfile` dentro dela), ou raiz com Dockerfile `backend/Dockerfile`.
-- O mesmo para `frontend` e `mcp-server`.
-
-(Ajuste fino depende da interface do EasyPanel; o importante é que cada build use o **Dockerfile** da pasta correta.)
+**Se der erro “mcp~server: no such file or directory”:** o EasyPanel às vezes troca o hífen por tilde. Ajuste manualmente o caminho do Dockerfile para **`mcp-server/Dockerfile`** (hífen) e o contexto para a **raiz** do repositório.
 
 ---
 
@@ -54,7 +50,7 @@ Se o EasyPanel pedir “pasta do projeto” ou “context”, use:
 Configure conforme **[ENV.md](./ENV.md)**:
 
 - **backend:** `DATABASE_URL` (obrigatório), `PORT`, `NODE_ENV`.
-- **frontend:** build arg `VITE_API_URL` = URL do backend (ex.: `https://backend.seudominio.com`).
+- **frontend:** variável de ambiente `VITE_API_URL` = URL pública do backend (ex.: `https://imobia-backend.90qhxz.easypanel.host`).
 - **mcp-server:** `PORT` (opcional).
 
 ---
