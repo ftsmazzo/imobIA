@@ -8,13 +8,17 @@ export default function App() {
 
   useEffect(() => {
     if (!API_URL) {
-      setError("VITE_API_URL não configurada");
+      setError("VITE_API_URL não configurada. No deploy, use a URL pública do backend (ex.: https://api.seudominio.com).");
       return;
     }
     fetch(`${API_URL}/api/health`)
       .then((r) => r.json())
       .then(setHealth)
-      .catch(() => setError("Backend inacessível"));
+      .catch(() =>
+        setError(
+          "Backend inacessível. Confira se VITE_API_URL no build é a URL pública do backend (não use host interno como backend:3000)."
+        )
+      );
   }, []);
 
   return (

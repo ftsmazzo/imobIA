@@ -46,14 +46,19 @@ O frontend é **build estático** (Vite). A URL do backend é definida **no mome
 
 | Variável | Obrigatória | Descrição | Exemplo |
 |----------|-------------|-----------|---------|
-| `VITE_API_URL` | Sim (no build) | URL pública do backend | `https://api.seudominio.com` ou `http://backend:3000` se for só interno |
+| `VITE_API_URL` | Sim (no build) | **URL pública** do backend (a que o usuário acessa no navegador) | `https://api.seudominio.com` |
 
-No **EasyPanel**, configure como **Build Argument** (não como env de runtime):
+No **EasyPanel**, configure como **Build Argument**:
 
 - Nome: `VITE_API_URL`
-- Valor: a URL que o navegador usará para chamar o backend (ex.: `https://api.seudominio.com`)
+- Valor: **a URL pública do backend** — ou seja, o endereço que você usa no navegador para abrir a API do backend (com domínio e porta, se não for 80/443).
 
-Se o backend for acessado por um domínio interno do EasyPanel, use o nome do serviço, ex.: `http://backend:3000` (só funciona se o front for servido pelo mesmo backend ou se houver proxy; em geral use a URL pública do backend).
+**Importante:** O frontend roda **no navegador do usuário**. As chamadas à API são feitas **pelo navegador**, não pelo servidor. Por isso:
+
+- **Use a URL pública do backend** (ex.: `https://backend.seudominio.com` ou `https://api.imobia.com`).
+- **Não use** o host interno do Docker (ex.: `http://imobia_backend:3000` ou `http://backend:3000`) — o navegador não resolve esses nomes e aparece "Backend inacessível".
+
+Depois de alterar `VITE_API_URL`, é preciso **refazer o build e o deploy** do frontend (o valor é fixado no build).
 
 ---
 
