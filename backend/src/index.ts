@@ -7,6 +7,17 @@ import { plans } from "./db/schema.js";
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
+// CORS: frontend (outro domínio) precisa chamar a API pelo navegador
+app.use((_req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (_req.method === "OPTIONS") {
+    res.sendStatus(204);
+    return;
+  }
+  next();
+});
 app.use(express.json());
 
 app.get("/api/health", (_req, res) => {
