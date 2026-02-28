@@ -29,6 +29,9 @@ router.post("/message", async (req, res) => {
     if (/\bcontatos?\b|\bleads?\b|\blistar\s+contatos?\b|\bquem\s+são\s+meus\s+contatos?\b/i.test(lower)) {
       const result = await callMcpTool("list_contacts", { tenant_id: tenant });
       reply = result.isError ? `Erro: ${result.text}` : result.text;
+    } else if (/\btarefas?\b|\bminhas\s+tarefas?\b|\blistar\s+tarefas?\b/i.test(lower)) {
+      const result = await callMcpTool("list_tasks", { tenant_id: tenant });
+      reply = result.isError ? `Erro: ${result.text}` : result.text;
     } else if (/\bbuscar\b|\bimóveis?\b|\balugar\b|\bcomprar\b/.test(lower)) {
       const neighborhood = extractNeighborhood(text) || "";
       const propertyType = extractPropertyType(text) || "";
@@ -56,7 +59,7 @@ router.post("/message", async (req, res) => {
         reply = result.isError ? `Erro: ${result.text}` : result.text;
       } else {
         reply =
-          "Não entendi. Você pode: \"buscar imóveis\", um número para ver imóvel, \"contatos\", ou \"criar tarefa: Ligar para João\".";
+          "Não entendi. Você pode: \"buscar imóveis\", um número para ver imóvel, \"contatos\", \"tarefas\", ou \"criar tarefa: Ligar para João\".";
       }
     }
 

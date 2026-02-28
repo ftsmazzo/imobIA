@@ -191,6 +191,42 @@ def _get_mcp_app():
         return f"Contatos ({n}):\n" + "\n".join(lines)
 
     @mcp.tool()
+    def list_tasks(tenant_id: int = 1, limit: int = 15) -> str:
+        """Lista tarefas do tenant (título, tipo, data, concluída ou não)."""
+        if not use_backend:
+            return "Backend não configurado (BACKEND_API_URL e BACKEND_INTERNAL_KEY)."
+        status, data = _backend_fetch(
+            "/api/internal/tasks",
+            {"tenant_id": tenant_id, "limit": min(limit, 30)},
+            internal_key,
+        )
+        if status != 200:
+            return f"Erro ao listar tarefas (status {status})."
+        if not isinstance(data, list):
+            return "Nenhuma tarefa encontrada."
+        if not data:
+            return "Nenhuma tarefa cadastrada."
+        lines = []
+        for t in data:
+            title = _get(t, "title") or "Sem título"
+            typ = _get(t, "type") or ""
+            due = _get(t, "dueAt")
+            done = _get(t, "completedAt")
+            status_str = "✓" if done else "○"
+            due_str = ""
+            if due:
+                try:
+                    from datetime import datetime
+                    dt = datetime.fromisoformat(str(due).replace("Z", "+00:00"))
+                    due_str = dt.strftime("%d/%m %H:%M")
+                except Exception:
+                    due_str = str(due)
+            extra = " | ".join(filter(None, [typ, due_str]))
+            lines.append(f"{status_str} {title}" + (f" — {extra}" if extra else ""))
+        n = len(lines)
+        return f"Tarefas ({n}):\n" + "\n".join(lines)
+
+    @mcp.tool()
     def create_task(
         tenant_id: int = 1,
         title: str = "Tarefa",

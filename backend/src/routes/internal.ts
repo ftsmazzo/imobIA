@@ -136,6 +136,36 @@ router.get("/contacts", async (req, res) => {
 });
 
 /**
+ * GET /api/internal/tasks
+ * Query: tenant_id (obrigatório), limit, offset
+ * Lista tarefas do tenant para uso pelo MCP.
+ */
+router.get("/tasks", async (req, res) => {
+  try {
+    const tenantId = Number(req.query.tenant_id);
+    if (!Number.isInteger(tenantId) || tenantId < 1) {
+      res.status(400).json({ error: "tenant_id obrigatório e deve ser inteiro positivo" });
+      return;
+    }
+    const limit = Math.min(Number(req.query.limit) || 20, 50);
+    const offset = Number(req.query.offset) || 0;
+
+    const list = await db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.tenantId, tenantId))
+      .orderBy(desc(tasks.dueAt), desc(tasks.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    res.json(list);
+  } catch (err) {
+    console.error("[internal/tasks]", err);
+    res.status(500).json({ error: "Erro ao listar tarefas" });
+  }
+});
+
+/**
  * POST /api/internal/tasks
  * Body: tenant_id (obrigatório), title, type?, contact_id?, property_id?, due_at?, notes?
  * Cria tarefa para uso pelo MCP (chat).

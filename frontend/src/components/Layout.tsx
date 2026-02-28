@@ -6,6 +6,7 @@ const NAV = [
   { to: "/planos", label: "Planos" },
   { to: "/imoveis", label: "Imóveis" },
   { to: "/contatos", label: "Contatos" },
+  { to: "/tarefas", label: "Tarefas" },
 ];
 
 export default function Layout() {

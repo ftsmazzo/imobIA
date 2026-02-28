@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import Planos from "./pages/Planos";
 import Imoveis from "./pages/Imoveis";
 import Contatos from "./pages/Contatos";
+import Tarefas from "./pages/Tarefas";
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="planos" element={<Planos />} />
           <Route path="imoveis" element={<Imoveis />} />
           <Route path="contatos" element={<Contatos />} />
+          <Route path="tarefas" element={<Tarefas />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
