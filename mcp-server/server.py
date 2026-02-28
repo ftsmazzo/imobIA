@@ -21,7 +21,8 @@ def _get_mcp_app():
     if _mcp_asgi is not None:
         return _mcp_asgi
     from fastmcp import FastMCP
-    mcp = FastMCP("Plataforma Imobiliária MCP")
+    # stateless_http=True: aceita tools/call sem sessão (ideal para webhook/backend server-to-server)
+    mcp = FastMCP("Plataforma Imobiliária MCP", stateless_http=True)
 
     @mcp.tool()
     def search_properties(neighborhood: str = "", property_type: str = "", max_value: float | None = None) -> str:
@@ -54,6 +55,13 @@ async def _asgi_app(scope, receive, send):
     if path in HEALTH_PATHS and method == "GET":
         await _send_health(send)
         return
+
+    # FastMCP espera ser montado em /mcp e receber path="/" (não path="/mcp")
+    if path == "/mcp" or path == "mcp":
+        mcp_scope = dict(scope)
+        mcp_scope["path"] = "/"
+        mcp_scope["root_path"] = scope.get("root_path", "") + "/mcp"
+        scope = mcp_scope
 
     try:
         await _get_mcp_app()(scope, receive, send)

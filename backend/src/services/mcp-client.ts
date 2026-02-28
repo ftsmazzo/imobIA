@@ -1,9 +1,18 @@
 /**
  * Cliente para chamar tools do MCP Server via HTTP (JSON-RPC 2.0).
+ * Transport: Streamable HTTP (2025-03-26) — exige initialize antes de tools/call.
  * Variável de ambiente: MCP_SERVER_URL (ex.: http://mcp-server:8000)
  */
 
 const MCP_SERVER_URL = process.env.MCP_SERVER_URL || "http://localhost:8000";
+
+const MCP_HEADERS = {
+  "Content-Type": "application/json",
+  Accept: "application/json, text/event-stream",
+} as const;
+
+/** Sessão em memória por base URL (evita initialize a cada request). */
+let cachedSessionId: string | null = null;
 
 export type McpToolResult = {
   text: string;
@@ -11,13 +20,76 @@ export type McpToolResult = {
 };
 
 /**
+ * Envia um request JSON-RPC ao endpoint /mcp. Retorna resposta parseada e headers.
+ */
+async function mcpPost(
+  url: string,
+  body: object,
+  sessionId: string | null
+): Promise<{ res: Response; data: unknown }> {
+  const headers: Record<string, string> = { ...MCP_HEADERS };
+  if (sessionId) headers["Mcp-Session-Id"] = sessionId;
+
+  const res = await fetch(`${url}/mcp/`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  }).catch((err) => {
+    throw new Error(`MCP server inacessível (${url}): ${(err as Error).message}`);
+  });
+
+  const text = await res.text();
+  let data: unknown;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    if (!res.ok) throw new Error(`MCP retornou ${res.status}: ${text.slice(0, 200)}`);
+    throw new Error(`MCP resposta inválida (não JSON): ${text.slice(0, 200)}`);
+  }
+
+  return { res, data };
+}
+
+/**
+ * Faz handshake initialize e retorna o Mcp-Session-Id (ou null se servidor não enviar).
+ */
+async function ensureSession(url: string): Promise<string | null> {
+  if (cachedSessionId) return cachedSessionId;
+
+  const initBody = {
+    jsonrpc: "2.0",
+    id: 1,
+    method: "initialize",
+    params: {
+      clientInfo: { name: "backend-webhook", version: "0.1" },
+      protocolVersion: "2025-03-26",
+    },
+  };
+
+  const { res, data } = await mcpPost(url, initBody, null);
+
+  if (!res.ok) {
+    const msg = (data as { error?: { message?: string } })?.error?.message ?? res.statusText;
+    throw new Error(`MCP initialize falhou (${res.status}): ${msg}`);
+  }
+
+  const sessionId = res.headers.get("mcp-session-id") ?? res.headers.get("Mcp-Session-Id") ?? null;
+  if (sessionId) cachedSessionId = sessionId;
+
+  return sessionId;
+}
+
+/**
  * Chama uma tool no MCP server. Retorna o texto da resposta ou lança em caso de falha.
+ * Faz initialize na primeira chamada e reutiliza Mcp-Session-Id; em 404 limpa sessão e repete uma vez.
  */
 export async function callMcpTool(
   name: string,
   args: Record<string, unknown> = {}
 ): Promise<McpToolResult> {
   const url = MCP_SERVER_URL.replace(/\/$/, "");
+  const sessionId = await ensureSession(url);
+
   const body = {
     jsonrpc: "2.0",
     id: Date.now(),
@@ -25,39 +97,37 @@ export async function callMcpTool(
     params: { name, arguments: args },
   };
 
-  // MCP Streamable HTTP exige Accept: application/json, text/event-stream (senão 406)
-  const res = await fetch(`${url}/mcp`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json, text/event-stream",
-    },
-    body: JSON.stringify(body),
-  }).catch((err) => {
-    throw new Error(`MCP server inacessível (${url}): ${(err as Error).message}`);
-  });
+  let { res, data } = await mcpPost(url, body, sessionId);
 
-  if (!res.ok) {
-    const msg = await res.text().catch(() => "");
-    throw new Error(`MCP retornou ${res.status}${msg ? ": " + msg.slice(0, 100) : ""}`);
+  if (res.status === 404 && sessionId) {
+    cachedSessionId = null;
+    const newSessionId = await ensureSession(url);
+    const retry = await mcpPost(url, body, newSessionId);
+    res = retry.res;
+    data = retry.data;
   }
 
-  const data = (await res.json()) as {
+  if (!res.ok) {
+    const msg = (data as { error?: { message?: string } })?.error?.message ?? "";
+    throw new Error(`MCP retornou ${res.status}${msg ? ": " + msg : ""}`);
+  }
+
+  const parsed = data as {
     jsonrpc?: string;
     id?: number;
     error?: { code: number; message: string };
     result?: { content?: Array<{ type: string; text?: string }>; isError?: boolean };
   };
 
-  if (data.error) {
-    throw new Error(data.error.message || "Erro ao chamar tool MCP");
+  if (parsed.error) {
+    throw new Error(parsed.error.message || "Erro ao chamar tool MCP");
   }
 
-  const content = data.result?.content;
+  const content = parsed.result?.content;
   const firstText = Array.isArray(content)
     ? content.find((c) => c.type === "text")?.text ?? ""
     : "";
-  const isError = data.result?.isError ?? false;
+  const isError = parsed.result?.isError ?? false;
 
   return { text: firstText, isError };
 }
