@@ -57,10 +57,9 @@ async def _asgi_app(scope, receive, send):
         await _send_health(send)
         return
 
-    # FastMCP espera ser montado em /mcp e receber path="/" (não path="/mcp")
+    # Garantir path=/mcp (FastMCP registra rota em /mcp)
     if path == "/mcp" or path == "mcp":
-        mcp_scope = {**scope, "path": "/"}
-        scope = mcp_scope
+        scope = {**scope, "path": "/mcp"}
 
     try:
         await _get_mcp_app()(scope, receive, send)
