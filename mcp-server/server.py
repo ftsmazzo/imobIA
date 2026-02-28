@@ -4,7 +4,6 @@ Tools imobiliárias para o agente (LangGraph). Exposto via HTTP para o backend.
 GET / e GET /health retornam 200 para health check (EasyPanel/load balancer).
 """
 
-import os
 from fastmcp import FastMCP
 
 mcp = FastMCP("Plataforma Imobiliária MCP")
@@ -53,10 +52,3 @@ async def _asgi_app(scope, receive, send):
         await _health_response(send)
         return
     await _mcp_asgi(scope, receive, send)
-
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", "8000"))
-    import uvicorn
-    # 0.0.0.0 para aceitar conexões de outros containers; GET / e GET /health = 200 para health check
-    uvicorn.run(_asgi_app, host="0.0.0.0", port=port)
