@@ -23,7 +23,7 @@ def _get_mcp_app():
         return _mcp_asgi
     from fastmcp import FastMCP
     # stateless_http=True: aceita tools/call sem sessão (ideal para webhook/backend server-to-server)
-    mcp = FastMCP("Plataforma Imobiliária MCP", stateless_http=True)
+    mcp = FastMCP("Plataforma Imobiliária MCP")
 
     @mcp.tool()
     def search_properties(neighborhood: str = "", property_type: str = "", max_value: float | None = None) -> str:
@@ -36,7 +36,7 @@ def _get_mcp_app():
     def get_property(property_id: int) -> str:
         return f"Imóvel id={property_id}: detalhes não disponíveis (conectar ao backend)."
 
-    _mcp_asgi = mcp.http_app()
+    _mcp_asgi = mcp.http_app(stateless_http=True)
     return _mcp_asgi
 
 
