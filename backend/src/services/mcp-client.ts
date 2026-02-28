@@ -25,16 +25,21 @@ export async function callMcpTool(
     params: { name, arguments: args },
   };
 
+  // MCP Streamable HTTP exige Accept: application/json, text/event-stream (senão 406)
   const res = await fetch(`${url}/mcp`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json, text/event-stream",
+    },
     body: JSON.stringify(body),
   }).catch((err) => {
     throw new Error(`MCP server inacessível (${url}): ${(err as Error).message}`);
   });
 
   if (!res.ok) {
-    throw new Error(`MCP server retornou ${res.status}`);
+    const msg = await res.text().catch(() => "");
+    throw new Error(`MCP retornou ${res.status}${msg ? ": " + msg.slice(0, 100) : ""}`);
   }
 
   const data = (await res.json()) as {
