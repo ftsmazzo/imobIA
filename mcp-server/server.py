@@ -146,6 +146,36 @@ def _get_mcp_app():
         extra = " | ".join(rooms) if rooms else ""
         return f"{title}\n\n{desc}\n\nEndereço: {addr or 'Não informado'}\n{price}\n{extra}".strip()
 
+    @mcp.tool()
+    def list_contacts(tenant_id: int = 1, limit: int = 15) -> str:
+        """Lista contatos/leads do tenant (nome, telefone, email)."""
+        if not use_backend:
+            return "Backend não configurado (BACKEND_API_URL e BACKEND_INTERNAL_KEY)."
+        status, data = _backend_fetch(
+            "/api/internal/contacts",
+            {"tenant_id": tenant_id, "limit": min(limit, 30)},
+            internal_key,
+        )
+        if status != 200:
+            return f"Erro ao listar contatos (status {status})."
+        if not isinstance(data, list):
+            return "Nenhum contato encontrado."
+        if not data:
+            return "Nenhum contato cadastrado ainda."
+        lines = []
+        for c in data:
+            name = _get(c, "name") or "Sem nome"
+            phone = _get(c, "phone") or ""
+            email = _get(c, "email") or ""
+            parts = [f"• {name}"]
+            if phone:
+                parts.append(f"tel: {phone}")
+            if email:
+                parts.append(f"email: {email}")
+            lines.append(" — ".join(parts))
+        n = len(lines)
+        return f"Contatos ({n}):\n" + "\n".join(lines)
+
     _mcp_asgi = mcp.http_app(stateless_http=True)
     return _mcp_asgi
 

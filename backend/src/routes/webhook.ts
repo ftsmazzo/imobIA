@@ -26,8 +26,10 @@ router.post("/message", async (req, res) => {
     const lower = text.toLowerCase();
     let reply: string;
 
-    // Regra simples: "buscar" ou "imóvel" → search_properties; número → get_property
-    if (/\bbuscar\b|\bimóveis?\b|\balugar\b|\bcomprar\b/.test(lower)) {
+    if (/\bcontatos?\b|\bleads?\b|\blistar\s+contatos?\b|\bquem\s+são\s+meus\s+contatos?\b/i.test(lower)) {
+      const result = await callMcpTool("list_contacts", { tenant_id: tenant });
+      reply = result.isError ? `Erro: ${result.text}` : result.text;
+    } else if (/\bbuscar\b|\bimóveis?\b|\balugar\b|\bcomprar\b/.test(lower)) {
       const neighborhood = extractNeighborhood(text) || "";
       const propertyType = extractPropertyType(text) || "";
       const maxValue = extractMaxValue(text);
@@ -44,7 +46,7 @@ router.post("/message", async (req, res) => {
       reply = result.isError ? `Erro: ${result.text}` : result.text;
     } else {
       reply =
-        "Não entendi. Digite \"buscar imóveis\" para listar ou um número (ex.: 1) para ver detalhes de um imóvel.";
+        "Não entendi. Você pode: \"buscar imóveis\" (ou até 500 mil), um número para ver imóvel, ou \"contatos\" para listar leads.";
     }
 
     console.log(`[webhook] from=${fromId} message="${text.slice(0, 50)}" reply_len=${reply.length}`);

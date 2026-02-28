@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { eq, and, desc, asc, ilike, or, lte } from "drizzle-orm";
 import { db } from "../db/index.js";
-import { properties, propertyPhotos } from "../db/schema.js";
+import { properties, propertyPhotos, contacts } from "../db/schema.js";
 
 const router = Router();
 
@@ -102,6 +102,36 @@ router.get("/properties/:id", async (req, res) => {
   } catch (err) {
     console.error("[internal/properties/:id]", err);
     res.status(500).json({ error: "Erro ao buscar imóvel" });
+  }
+});
+
+/**
+ * GET /api/internal/contacts
+ * Query: tenant_id (obrigatório), limit, offset
+ * Lista contatos do tenant para uso pelo MCP.
+ */
+router.get("/contacts", async (req, res) => {
+  try {
+    const tenantId = Number(req.query.tenant_id);
+    if (!Number.isInteger(tenantId) || tenantId < 1) {
+      res.status(400).json({ error: "tenant_id obrigatório e deve ser inteiro positivo" });
+      return;
+    }
+    const limit = Math.min(Number(req.query.limit) || 20, 50);
+    const offset = Number(req.query.offset) || 0;
+
+    const list = await db
+      .select()
+      .from(contacts)
+      .where(eq(contacts.tenantId, tenantId))
+      .orderBy(desc(contacts.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    res.json(list);
+  } catch (err) {
+    console.error("[internal/contacts]", err);
+    res.status(500).json({ error: "Erro ao listar contatos" });
   }
 });
 

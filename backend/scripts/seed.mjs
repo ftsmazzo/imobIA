@@ -71,6 +71,17 @@ try {
       );
       console.log("[seed] 5 imóveis de demonstração inseridos (tenant existente).");
     }
+    const contactsCount = await client.query("SELECT COUNT(*)::int AS n FROM contacts WHERE tenant_id = $1", [tid]);
+    if (contactsCount.rows[0].n === 0) {
+      await client.query(
+        `INSERT INTO contacts (tenant_id, name, phone, email, source)
+         VALUES ($1, 'Maria Silva', '5511999990001', 'maria@email.com', 'webhook'),
+                ($1, 'João Santos', '5511988880002', 'joao@email.com', 'indicacao'),
+                ($1, 'Ana Costa', '5511977770003', 'ana@email.com', 'site')`,
+        [tid]
+      );
+      console.log("[seed] 3 contatos de demonstração inseridos.");
+    }
   }
 } catch (err) {
   console.error("[seed] Erro:", err.message);
