@@ -53,6 +53,25 @@ try {
   } else {
     console.log("[seed] Usuários já existem.");
   }
+
+  const firstTenant = await client.query("SELECT id FROM tenants ORDER BY id LIMIT 1");
+  if (firstTenant.rows.length > 0) {
+    const tid = firstTenant.rows[0].id;
+    const propsCount = await client.query("SELECT COUNT(*)::int AS n FROM properties WHERE tenant_id = $1", [tid]);
+    if (propsCount.rows[0].n === 0) {
+      await client.query(
+        `INSERT INTO properties (tenant_id, type, title, address_street, address_number, address_neighborhood, address_city, address_state, value_sale, value_rent, status, description, bedrooms, bathrooms, parking_spaces, area_m2, code)
+         VALUES
+           ($1, 'apartment', 'Apartamento Centro - 2 quartos', 'Rua das Flores', '100', 'Centro', 'São Paulo', 'SP', 450000, 1800, 'available', 'Apartamento reformado, bem localizado. Varanda gourmet.', 2, 1, 1, 65, 'APT-001'),
+           ($1, 'house', 'Casa com quintal - Jardins', 'Av. Brasil', '500', 'Jardins', 'São Paulo', 'SP', 1200000, null, 'available', 'Casa ampla, 3 suítes, jardim e churrasqueira.', 3, 3, 2, 180, 'CASA-002'),
+           ($1, 'apartment', 'Studio para alugar - Pinheiros', 'Rua dos Pinheiros', '200', 'Pinheiros', 'São Paulo', 'SP', null, 2200, 'available', 'Studio mobiliado, próximo ao metrô.', 1, 1, 0, 35, 'APT-003'),
+           ($1, 'apartment', 'Cobertura duplex - Centro', 'Rua do Comércio', '50', 'Centro', 'São Paulo', 'SP', 890000, 4500, 'available', 'Cobertura com vista, 2 vagas.', 3, 2, 2, 120, 'COB-004'),
+           ($1, 'house', 'Casa térrea - até 500 mil', 'Rua das Palmeiras', '10', 'Vila Nova', 'Guarulhos', 'SP', 380000, 1500, 'available', 'Casa em condomínio fechado, 2 quartos.', 2, 2, 1, 95, 'CASA-005')`,
+        [tid]
+      );
+      console.log("[seed] 5 imóveis de demonstração inseridos (tenant existente).");
+    }
+  }
 } catch (err) {
   console.error("[seed] Erro:", err.message);
   process.exit(1);

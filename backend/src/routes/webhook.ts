@@ -30,10 +30,12 @@ router.post("/message", async (req, res) => {
     if (/\bbuscar\b|\bimóveis?\b|\balugar\b|\bcomprar\b/.test(lower)) {
       const neighborhood = extractNeighborhood(text) || "";
       const propertyType = extractPropertyType(text) || "";
+      const maxValue = extractMaxValue(text);
       const result = await callMcpTool("search_properties", {
         tenant_id: tenant,
         neighborhood: neighborhood || undefined,
         property_type: propertyType || undefined,
+        ...(maxValue != null && maxValue > 0 ? { max_value: maxValue } : {}),
       });
       reply = result.isError ? `Erro: ${result.text}` : result.text;
     } else if (/^\d+$/.test(text.trim())) {
@@ -68,6 +70,24 @@ function extractPropertyType(text: string): string {
   if (/\bterreno\b/.test(lower)) return "land";
   if (/\bcomercial\b/.test(lower)) return "commercial";
   return "";
+}
+
+/** Extrai valor máximo da mensagem (ex.: "até 500 mil", "máximo 1 milhão", "até R$ 300000"). */
+function extractMaxValue(text: string): number | undefined {
+  const lower = text.replace(/\s+/g, " ").trim().toLowerCase();
+  const milhao = lower.match(/(?:até|máximo|max|valor\s+)?(?:de\s+)?(?:r\$\s*)?(\d+(?:[.,]\d+)?)\s*(?:milh[oõ]es?|mi)/i);
+  if (milhao) {
+    const n = parseFloat(milhao[1].replace(",", "."));
+    return Number.isFinite(n) && n > 0 ? n * 1_000_000 : undefined;
+  }
+  const mil = lower.match(/(?:até|máximo|max|valor\s+)?(?:de\s+)?(?:r\$\s*)?(\d+(?:[.,]\d+)?)\s*(?:mil|k)/i);
+  if (mil) {
+    const n = parseFloat(mil[1].replace(",", "."));
+    return n * 1000;
+  }
+  const num = lower.match(/(?:até|máximo|max|valor\s+)?(?:de\s+)?(?:r\$\s*)?(\d{4,})/);
+  if (num) return parseInt(num[1].replace(/\D/g, ""), 10);
+  return undefined;
 }
 
 export default router;
