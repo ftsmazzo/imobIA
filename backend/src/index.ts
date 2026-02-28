@@ -13,6 +13,7 @@ import contactsRoutes from "./routes/contacts.js";
 import tasksRoutes from "./routes/tasks.js";
 import webhookRoutes from "./routes/webhook.js";
 import internalRoutes from "./routes/internal.js";
+import dashboardRoutes from "./routes/dashboard.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -62,6 +63,7 @@ app.use("/api/contacts", contactsRoutes);
 app.use("/api/tasks", tasksRoutes);
 app.use("/api/webhook", webhookRoutes);
 app.use("/api/internal", internalRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Backend rodando em http://0.0.0.0:${PORT}`);
