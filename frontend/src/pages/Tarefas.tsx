@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
+import Button from "../components/Button";
 
 type Task = {
   id: number;
@@ -63,9 +64,15 @@ export default function Tarefas() {
 
   return (
     <div>
-      <h1 style={{ margin: "0 0 1rem", fontSize: "1.5rem" }}>Tarefas</h1>
+      <h1 style={{ margin: "0 0 0.5rem", fontSize: "1.5rem" }}>Tarefas</h1>
+      <div style={{ background: "#e8eef4", padding: "1rem 1.25rem", borderRadius: 10, marginBottom: "1.25rem", border: "1px solid #c5d5e8" }}>
+        <span style={{ fontSize: "0.95rem", color: "#333", marginRight: "0.75rem" }}>Tarefas pendentes aparecem aqui. Para criar, use o chat: &quot;criar tarefa: Ligar para João&quot;</span>
+      </div>
       {list.length === 0 ? (
-        <p style={{ color: "#666" }}>Nenhuma tarefa cadastrada. Crie pelo chat: &quot;criar tarefa: Ligar para João&quot;</p>
+        <div style={{ background: "#fff", padding: "1.5rem", borderRadius: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.08)", textAlign: "center" }}>
+          <p style={{ color: "#666", margin: "0 0 1rem" }}>Nenhuma tarefa cadastrada.</p>
+          <p style={{ color: "#888", fontSize: "0.9rem", margin: 0 }}>Crie pelo atendimento (webhook/chat): &quot;criar tarefa: Ligar para João&quot;</p>
+        </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           {list.map((t) => (
@@ -90,13 +97,13 @@ export default function Tarefas() {
                   </span>
                 )}
                 {!t.completedAt && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
                     onClick={() => handleComplete(t.id)}
-                    style={styles.completeBtn}
+                    style={{ marginLeft: "auto" }}
                   >
                     Concluir
-                  </button>
+                  </Button>
                 )}
               </div>
               {(t.dueAt || t.notes) && (
@@ -115,15 +122,3 @@ export default function Tarefas() {
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  completeBtn: {
-    marginLeft: "auto",
-    padding: "0.35rem 0.75rem",
-    fontSize: "0.85rem",
-    background: "#0f3460",
-    color: "#fff",
-    border: "none",
-    borderRadius: 6,
-    cursor: "pointer",
-  },
-};

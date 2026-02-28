@@ -28,18 +28,21 @@ export default function Dashboard() {
 
       {stats && (
         <div style={styles.cards}>
-          <Link to="/imoveis" style={styles.card}>
+          <div style={styles.card}>
             <span style={styles.cardNumber}>{stats.properties}</span>
             <span style={styles.cardLabel}>Imóveis</span>
-          </Link>
-          <Link to="/contatos" style={styles.card}>
+            <Link to="/imoveis" style={styles.cardBtn}>Ver imóveis</Link>
+          </div>
+          <div style={styles.card}>
             <span style={styles.cardNumber}>{stats.contacts}</span>
             <span style={styles.cardLabel}>Contatos</span>
-          </Link>
-          <Link to="/tarefas" style={styles.card}>
+            <Link to="/contatos" style={styles.cardBtn}>Ver contatos</Link>
+          </div>
+          <div style={styles.card}>
             <span style={styles.cardNumber}>{stats.tasksPending}</span>
             <span style={styles.cardLabel}>Tarefas pendentes</span>
-          </Link>
+            <Link to="/tarefas" style={styles.cardBtn}>Ver tarefas</Link>
+          </div>
         </div>
       )}
 
@@ -62,8 +65,6 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "1.25rem 1.5rem",
     borderRadius: 10,
     boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-    textDecoration: "none",
-    color: "inherit",
     display: "flex",
     flexDirection: "column",
     gap: "0.35rem",
@@ -76,5 +77,17 @@ const styles: Record<string, React.CSSProperties> = {
   cardLabel: {
     fontSize: "0.9rem",
     color: "#666",
+  },
+  cardBtn: {
+    display: "block",
+    marginTop: "0.5rem",
+    padding: "0.5rem 1rem",
+    fontSize: "0.95rem",
+    fontWeight: 600,
+    color: "#0f3460",
+    border: "2px solid #0f3460",
+    borderRadius: 8,
+    textAlign: "center" as const,
+    textDecoration: "none",
   },
 };

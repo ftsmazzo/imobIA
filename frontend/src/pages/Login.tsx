@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import Button from "../components/Button";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -51,9 +52,9 @@ export default function Login() {
             style={styles.input}
           />
           {error && <p style={styles.error}>{error}</p>}
-          <button type="submit" disabled={loading} style={styles.button}>
+          <Button type="submit" variant="primary" disabled={loading} style={{ width: "100%", padding: "0.85rem" }}>
             {loading ? "Entrando…" : "Entrar"}
-          </button>
+          </Button>
         </form>
         <p style={styles.demoHint}>Demo: <code>admin@demo.com</code> / <code>admin123</code></p>
       </div>
@@ -102,16 +103,6 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
     color: "#c00",
     fontSize: "0.9rem",
-  },
-  button: {
-    padding: "0.85rem",
-    background: "#0f3460",
-    color: "#fff",
-    border: "none",
-    borderRadius: 8,
-    fontSize: "1rem",
-    fontWeight: 600,
-    cursor: "pointer",
   },
   demoHint: {
     margin: "1.25rem 0 0",

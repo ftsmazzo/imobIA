@@ -1,5 +1,6 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import Button from "./Button";
 
 const NAV = [
   { to: "/", label: "Dashboard" },
@@ -26,7 +27,7 @@ export default function Layout() {
               to={to}
               style={{
                 ...styles.navLink,
-                ...(location.pathname === to ? styles.navLinkActive : {}),
+                ...(location.pathname === to || (to !== "/" && location.pathname.startsWith(to)) ? styles.navLinkActive : {}),
               }}
             >
               {label}
@@ -35,9 +36,9 @@ export default function Layout() {
         </nav>
         <div style={styles.sidebarFooter}>
           <span style={styles.userName}>{user?.name || user?.email}</span>
-          <button type="button" onClick={logout} style={styles.logoutBtn}>
+          <Button type="button" variant="outlineLight" onClick={logout}>
             Sair
-          </button>
+          </Button>
         </div>
       </aside>
       <main style={styles.main}>
@@ -99,15 +100,6 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
-  },
-  logoutBtn: {
-    padding: "0.5rem",
-    background: "transparent",
-    border: "1px solid rgba(255,255,255,0.2)",
-    color: "#eee",
-    borderRadius: 6,
-    cursor: "pointer",
-    fontSize: "0.9rem",
   },
   main: {
     flex: 1,
