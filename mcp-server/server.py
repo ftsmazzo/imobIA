@@ -31,14 +31,25 @@ def _backend_fetch(path: str, params: dict, key: str) -> tuple[int, dict | list]
         return 0, {}
 
 
+def _get(p: dict, *keys: str):
+    """Retorna o primeiro valor presente (camel ou snake_case)."""
+    for k in keys:
+        if p.get(k) is not None:
+            return p.get(k)
+        sk = "".join("_" + c.lower() if c.isupper() else c for c in k).lstrip("_")
+        if p.get(sk) is not None:
+            return p.get(sk)
+    return None
+
+
 def _fmt_property(p: dict) -> str:
     """Formata um imóvel para texto."""
-    title = p.get("title") or "Sem título"
-    addr = p.get("addressNeighborhood") or p.get("addressCity") or ""
+    title = _get(p, "title") or "Sem título"
+    addr = _get(p, "addressNeighborhood") or _get(p, "addressCity") or ""
     if addr:
         addr = f" — {addr}"
-    v_sale = p.get("valueSale")
-    v_rent = p.get("valueRent")
+    v_sale = _get(p, "valueSale")
+    v_rent = _get(p, "valueRent")
     vals = []
     if v_sale and float(v_sale) > 0:
         vals.append(f"Venda R$ {float(v_sale):,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
@@ -88,7 +99,8 @@ def _get_mcp_app():
         if not data:
             return "Nenhum imóvel encontrado com os filtros informados."
         lines = [_fmt_property(p) for p in data]
-        return "Imóveis encontrados:\n" + "\n".join(lines)
+        n = len(lines)
+        return f"Imóveis encontrados ({n}):\n" + "\n".join(lines)
 
     @mcp.tool()
     def get_property(property_id: int, tenant_id: int = 1) -> str:
@@ -104,18 +116,18 @@ def _get_mcp_app():
         if status != 200 or not isinstance(data, dict):
             return f"Erro ao buscar imóvel (status {status})."
         p = data
-        title = p.get("title") or "Sem título"
-        desc = (p.get("description") or "").strip() or "Sem descrição."
+        title = _get(p, "title") or "Sem título"
+        desc = (_get(p, "description") or "").strip() or "Sem descrição."
         addr_parts = [
-            p.get("addressStreet"),
-            p.get("addressNumber"),
-            p.get("addressNeighborhood"),
-            p.get("addressCity"),
-            p.get("addressState"),
+            _get(p, "addressStreet"),
+            _get(p, "addressNumber"),
+            _get(p, "addressNeighborhood"),
+            _get(p, "addressCity"),
+            _get(p, "addressState"),
         ]
         addr = ", ".join(str(x) for x in addr_parts if x)
-        v_sale = p.get("valueSale")
-        v_rent = p.get("valueRent")
+        v_sale = _get(p, "valueSale")
+        v_rent = _get(p, "valueRent")
         vals = []
         if v_sale and float(v_sale) > 0:
             vals.append(f"Venda: R$ {float(v_sale):,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
@@ -123,14 +135,14 @@ def _get_mcp_app():
             vals.append(f"Aluguel: R$ {float(v_rent):,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
         price = "\n".join(vals) if vals else "Valor não informado."
         rooms = []
-        if p.get("bedrooms"):
-            rooms.append(f"{p['bedrooms']} quartos")
-        if p.get("bathrooms"):
-            rooms.append(f"{p['bathrooms']} banheiros")
-        if p.get("parkingSpaces"):
-            rooms.append(f"{p['parkingSpaces']} vagas")
-        if p.get("areaM2"):
-            rooms.append(f"{float(p['areaM2']):.0f} m²")
+        if _get(p, "bedrooms"):
+            rooms.append(f"{_get(p, 'bedrooms')} quartos")
+        if _get(p, "bathrooms"):
+            rooms.append(f"{_get(p, 'bathrooms')} banheiros")
+        if _get(p, "parkingSpaces"):
+            rooms.append(f"{_get(p, 'parkingSpaces')} vagas")
+        if _get(p, "areaM2"):
+            rooms.append(f"{float(_get(p, 'areaM2')):.0f} m²")
         extra = " | ".join(rooms) if rooms else ""
         return f"{title}\n\n{desc}\n\nEndereço: {addr or 'Não informado'}\n{price}\n{extra}".strip()
 
