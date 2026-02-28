@@ -66,7 +66,11 @@ Configure conforme **[ENV.md](./ENV.md)**:
 
 ## 5. Troubleshooting — MCP Server reiniciando
 
-Se o **mcp-server** ficar em loop (logs: "Shutting down"): o servidor agora responde **GET /** e **GET /health** com 200, para que qualquer verificação de saúde da plataforma passe. Redeploy do mcp-server para valer.
+Se o **mcp-server** ficar em loop (logs: "Shutting down" a cada poucos segundos):
+
+1. **Tipo de serviço:** no EasyPanel, o mcp-server deve ser **aplicação web / long-running**, não "job" ou "cron". Job encerra o processo após iniciar.
+2. **Health check:** o servidor responde **200** em GET `/`, `/health`, `/healthz`, `/ready`, `/readyz`. Se o painel tiver verificação de saúde, use um desses paths ou deixe desativado.
+3. **Redeploy** do mcp-server após alterações no código.
 
 ---
 
