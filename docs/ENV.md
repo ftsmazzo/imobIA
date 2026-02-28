@@ -35,6 +35,7 @@ postgresql://postgres:SUA_SENHA@postgres:5432/plataforma_imobiliaria
 | `DATABASE_URL` | Sim | Connection string do PostgreSQL | `postgresql://user:pass@postgres:5432/plataforma_imobiliaria` |
 | `JWT_SECRET` | Sim (produção) | Chave para assinar tokens JWT (login) | string longa e aleatória |
 | `MCP_SERVER_URL` | Sim (para webhook) | URL do MCP server (backend chama as tools aqui) | `http://mcp-server:8000` (host interno Docker) |
+| `BACKEND_INTERNAL_KEY` | Sim (para MCP) | Chave para API interna (MCP chama GET /api/internal/properties com header X-Internal-Key) | string secreta (mesmo valor no backend e no MCP) |
 | `PORT` | Não | Porta HTTP (padrão: 3000) | `3000` |
 | `NODE_ENV` | Não | `development` ou `production` | `production` |
 
@@ -64,8 +65,10 @@ No **EasyPanel**, configure como **variável de ambiente** do serviço frontend:
 | Variável | Obrigatória | Descrição | Exemplo |
 |----------|-------------|-----------|---------|
 | `PORT` | Não | Porta HTTP (padrão: 8000) | `8000` |
+| `BACKEND_API_URL` | Sim (para dados reais) | URL do backend para as tools buscarem imóveis (API interna) | `http://backend:3000` (host interno Docker) |
+| `BACKEND_INTERNAL_KEY` | Sim (com BACKEND_API_URL) | Mesma chave definida no backend (header X-Internal-Key) | mesmo valor de BACKEND_INTERNAL_KEY do backend |
 
-Por enquanto o MCP server não precisa de banco; no futuro pode receber `BACKEND_URL` ou `DATABASE_URL` para chamar o backend ou ler direto.
+Se `BACKEND_API_URL` e `BACKEND_INTERNAL_KEY` não forem definidos, as tools retornam mensagem de “backend não configurado”.
 
 ---
 
@@ -74,9 +77,9 @@ Por enquanto o MCP server não precisa de banco; no futuro pode receber `BACKEND
 | Serviço | Variáveis principais |
 |---------|----------------------|
 | **PostgreSQL** | (criar usuário/senha/banco e anotar para o backend) |
-| **backend** | `DATABASE_URL`, `PORT` (opcional), `NODE_ENV` (opcional) |
+| **backend** | `DATABASE_URL`, `JWT_SECRET`, `MCP_SERVER_URL`, `BACKEND_INTERNAL_KEY`, `PORT` (opcional) |
 | **frontend** | Variável de ambiente: `VITE_API_URL` = URL pública do backend (runtime) |
-| **mcp-server** | `PORT` (opcional, padrão 8000) |
+| **mcp-server** | `PORT` (opcional), `BACKEND_API_URL`, `BACKEND_INTERNAL_KEY` (para imóveis reais) |
 
 ---
 

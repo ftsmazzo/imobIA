@@ -11,9 +11,10 @@ const router = Router();
  */
 router.post("/message", async (req, res) => {
   try {
-    const { from, message } = req.body as { from?: string; message?: string };
+    const { from, message, tenantId } = req.body as { from?: string; message?: string; tenantId?: number };
     const text = typeof message === "string" ? message.trim() : "";
     const fromId = typeof from === "string" ? from : "unknown";
+    const tenant = Number.isInteger(tenantId) && tenantId! > 0 ? tenantId! : 1;
 
     if (!text) {
       res.json({
@@ -30,13 +31,14 @@ router.post("/message", async (req, res) => {
       const neighborhood = extractNeighborhood(text) || "";
       const propertyType = extractPropertyType(text) || "";
       const result = await callMcpTool("search_properties", {
+        tenant_id: tenant,
         neighborhood: neighborhood || undefined,
         property_type: propertyType || undefined,
       });
       reply = result.isError ? `Erro: ${result.text}` : result.text;
     } else if (/^\d+$/.test(text.trim())) {
       const id = parseInt(text.trim(), 10);
-      const result = await callMcpTool("get_property", { property_id: id });
+      const result = await callMcpTool("get_property", { property_id: id, tenant_id: tenant });
       reply = result.isError ? `Erro: ${result.text}` : result.text;
     } else {
       reply =

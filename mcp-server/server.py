@@ -17,24 +17,122 @@ HEALTH_HEADERS = [[b"content-type", b"text/plain"], [b"content-length", b"2"]]
 _mcp_asgi = None
 
 
+def _backend_fetch(path: str, params: dict, key: str) -> tuple[int, dict | list]:
+    """GET no backend interno. Retorna (status, body)."""
+    import httpx
+    base = (__import__("os").environ.get("BACKEND_API_URL") or "").rstrip("/")
+    if not base or not key:
+        return 0, {}
+    url = f"{base}{path}"
+    try:
+        r = httpx.get(url, params=params, headers={"X-Internal-Key": key}, timeout=15.0)
+        return r.status_code, r.json() if r.content else {}
+    except Exception:
+        return 0, {}
+
+
+def _fmt_property(p: dict) -> str:
+    """Formata um imóvel para texto."""
+    title = p.get("title") or "Sem título"
+    addr = p.get("addressNeighborhood") or p.get("addressCity") or ""
+    if addr:
+        addr = f" — {addr}"
+    v_sale = p.get("valueSale")
+    v_rent = p.get("valueRent")
+    vals = []
+    if v_sale and float(v_sale) > 0:
+        vals.append(f"Venda R$ {float(v_sale):,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+    if v_rent and float(v_rent) > 0:
+        vals.append(f"Aluguel R$ {float(v_rent):,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+    price = " | ".join(vals) if vals else ""
+    return f"• {title}{addr} {price}".strip()
+
+
 def _get_mcp_app():
     global _mcp_asgi
     if _mcp_asgi is not None:
         return _mcp_asgi
+    import os
     from fastmcp import FastMCP
-    # stateless_http=True: aceita tools/call sem sessão (ideal para webhook/backend server-to-server)
+
+    backend_url = os.environ.get("BACKEND_API_URL", "").rstrip("/")
+    internal_key = os.environ.get("BACKEND_INTERNAL_KEY", "")
+    use_backend = bool(backend_url and internal_key)
+
     mcp = FastMCP("Plataforma Imobiliária MCP")
 
     @mcp.tool()
-    def search_properties(neighborhood: str = "", property_type: str = "", max_value: float | None = None) -> str:
-        return (
-            f"Busca: bairro={neighborhood or 'qualquer'}, tipo={property_type or 'qualquer'}, "
-            f"valor_max={max_value or 'não informado'}. Nenhum imóvel cadastrado ainda (conectar ao backend)."
-        )
+    def search_properties(
+        tenant_id: int = 1,
+        neighborhood: str = "",
+        property_type: str = "",
+        max_value: float | None = None,
+    ) -> str:
+        if not use_backend:
+            return (
+                f"Busca: bairro={neighborhood or 'qualquer'}, tipo={property_type or 'qualquer'}, "
+                "valor_max=não informado. Backend não configurado (BACKEND_API_URL e BACKEND_INTERNAL_KEY)."
+            )
+        params = {"tenant_id": tenant_id, "limit": 15}
+        if neighborhood:
+            params["neighborhood"] = neighborhood
+        if property_type:
+            params["type"] = property_type
+        if max_value is not None and max_value > 0:
+            params["max_value"] = max_value
+        status, data = _backend_fetch("/api/internal/properties", params, internal_key)
+        if status != 200:
+            return f"Erro ao buscar imóveis (status {status})."
+        if not isinstance(data, list):
+            return "Nenhum imóvel encontrado."
+        if not data:
+            return "Nenhum imóvel encontrado com os filtros informados."
+        lines = [_fmt_property(p) for p in data]
+        return "Imóveis encontrados:\n" + "\n".join(lines)
 
     @mcp.tool()
-    def get_property(property_id: int) -> str:
-        return f"Imóvel id={property_id}: detalhes não disponíveis (conectar ao backend)."
+    def get_property(property_id: int, tenant_id: int = 1) -> str:
+        if not use_backend:
+            return f"Imóvel id={property_id}: Backend não configurado (BACKEND_API_URL e BACKEND_INTERNAL_KEY)."
+        status, data = _backend_fetch(
+            f"/api/internal/properties/{property_id}",
+            {"tenant_id": tenant_id},
+            internal_key,
+        )
+        if status == 404:
+            return f"Imóvel {property_id} não encontrado."
+        if status != 200 or not isinstance(data, dict):
+            return f"Erro ao buscar imóvel (status {status})."
+        p = data
+        title = p.get("title") or "Sem título"
+        desc = (p.get("description") or "").strip() or "Sem descrição."
+        addr_parts = [
+            p.get("addressStreet"),
+            p.get("addressNumber"),
+            p.get("addressNeighborhood"),
+            p.get("addressCity"),
+            p.get("addressState"),
+        ]
+        addr = ", ".join(str(x) for x in addr_parts if x)
+        v_sale = p.get("valueSale")
+        v_rent = p.get("valueRent")
+        vals = []
+        if v_sale and float(v_sale) > 0:
+            vals.append(f"Venda: R$ {float(v_sale):,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        if v_rent and float(v_rent) > 0:
+            vals.append(f"Aluguel: R$ {float(v_rent):,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        price = "\n".join(vals) if vals else "Valor não informado."
+        rooms = []
+        if p.get("bedrooms"):
+            rooms.append(f"{p['bedrooms']} quartos")
+        if p.get("bathrooms"):
+            rooms.append(f"{p['bathrooms']} banheiros")
+        if p.get("parkingSpaces"):
+            rooms.append(f"{p['parkingSpaces']} vagas")
+        if p.get("areaM2"):
+            rooms.append(f"{float(p['areaM2']):.0f} m²")
+        extra = " | ".join(rooms) if rooms else ""
+        return f"{title}\n\n{desc}\n\nEndereço: {addr or 'Não informado'}\n{price}\n{extra}".strip()
 
     _mcp_asgi = mcp.http_app(stateless_http=True)
     return _mcp_asgi
