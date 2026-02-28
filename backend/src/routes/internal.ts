@@ -136,6 +136,39 @@ router.get("/contacts", async (req, res) => {
 });
 
 /**
+ * GET /api/internal/contacts/:id
+ * Query: tenant_id (obrigatório)
+ * Detalhe do contato para uso pelo MCP.
+ */
+router.get("/contacts/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: "ID inválido" });
+      return;
+    }
+    const tenantId = Number(req.query.tenant_id);
+    if (!Number.isInteger(tenantId) || tenantId < 1) {
+      res.status(400).json({ error: "tenant_id obrigatório e deve ser inteiro positivo" });
+      return;
+    }
+    const [contact] = await db
+      .select()
+      .from(contacts)
+      .where(and(eq(contacts.id, id), eq(contacts.tenantId, tenantId)))
+      .limit(1);
+    if (!contact) {
+      res.status(404).json({ error: "Contato não encontrado" });
+      return;
+    }
+    res.json(contact);
+  } catch (err) {
+    console.error("[internal/contacts/:id]", err);
+    res.status(500).json({ error: "Erro ao buscar contato" });
+  }
+});
+
+/**
  * GET /api/internal/tasks
  * Query: tenant_id (obrigatório), limit, offset
  * Lista tarefas do tenant para uso pelo MCP.
@@ -202,6 +235,44 @@ router.post("/tasks", async (req, res) => {
   } catch (err) {
     console.error("[internal/tasks]", err);
     res.status(500).json({ error: "Erro ao criar tarefa" });
+  }
+});
+
+/**
+ * PATCH /api/internal/tasks/:id
+ * Body: tenant_id (obrigatório). Conclui a tarefa (completedAt = now).
+ */
+router.patch("/tasks/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: "ID inválido" });
+      return;
+    }
+    const body = req.body as Record<string, unknown>;
+    const tenantId = Number(body.tenant_id);
+    if (!Number.isInteger(tenantId) || tenantId < 1) {
+      res.status(400).json({ error: "tenant_id obrigatório e deve ser inteiro positivo" });
+      return;
+    }
+    const [existing] = await db
+      .select()
+      .from(tasks)
+      .where(and(eq(tasks.id, id), eq(tasks.tenantId, tenantId)))
+      .limit(1);
+    if (!existing) {
+      res.status(404).json({ error: "Tarefa não encontrada" });
+      return;
+    }
+    const [task] = await db
+      .update(tasks)
+      .set({ completedAt: new Date(), updatedAt: new Date() })
+      .where(eq(tasks.id, id))
+      .returning();
+    res.json(task);
+  } catch (err) {
+    console.error("[internal/tasks/:id PATCH]", err);
+    res.status(500).json({ error: "Erro ao concluir tarefa" });
   }
 });
 

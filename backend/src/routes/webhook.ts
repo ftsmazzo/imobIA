@@ -43,23 +43,35 @@ router.post("/message", async (req, res) => {
         ...(maxValue != null && maxValue > 0 ? { max_value: maxValue } : {}),
       });
       reply = result.isError ? `Erro: ${result.text}` : result.text;
-    } else if (/^\d+$/.test(text.trim())) {
-      const id = parseInt(text.trim(), 10);
-      const result = await callMcpTool("get_property", { property_id: id, tenant_id: tenant });
-      reply = result.isError ? `Erro: ${result.text}` : result.text;
     } else {
-      const taskPayload = extractTaskFromMessage(text);
-      if (taskPayload) {
-        const { title, due_at } = taskPayload;
-        const result = await callMcpTool("create_task", {
-          tenant_id: tenant,
-          title,
-          ...(due_at ? { due_at } : {}),
-        });
+      const completeTaskId = extractCompleteTaskId(text);
+      if (completeTaskId != null) {
+        const result = await callMcpTool("complete_task", { task_id: completeTaskId, tenant_id: tenant });
         reply = result.isError ? `Erro: ${result.text}` : result.text;
       } else {
-        reply =
-          "Não entendi. Você pode: \"buscar imóveis\", um número para ver imóvel, \"contatos\", \"tarefas\", ou \"criar tarefa: Ligar para João\".";
+        const contactId = extractContactId(text);
+        if (contactId != null) {
+          const result = await callMcpTool("get_contact", { contact_id: contactId, tenant_id: tenant });
+          reply = result.isError ? `Erro: ${result.text}` : result.text;
+        } else if (/^\d+$/.test(text.trim())) {
+          const id = parseInt(text.trim(), 10);
+          const result = await callMcpTool("get_property", { property_id: id, tenant_id: tenant });
+          reply = result.isError ? `Erro: ${result.text}` : result.text;
+        } else {
+          const taskPayload = extractTaskFromMessage(text);
+          if (taskPayload) {
+            const { title, due_at } = taskPayload;
+            const result = await callMcpTool("create_task", {
+              tenant_id: tenant,
+              title,
+              ...(due_at ? { due_at } : {}),
+            });
+            reply = result.isError ? `Erro: ${result.text}` : result.text;
+          } else {
+            reply =
+              "Não entendi. Você pode: \"buscar imóveis\", um número para ver imóvel, \"contatos\", \"contato 2\", \"tarefas\", \"concluir tarefa 2\", ou \"criar tarefa: Ligar para João\".";
+          }
+        }
       }
     }
 
@@ -104,6 +116,18 @@ function extractMaxValue(text: string): number | undefined {
   const num = lower.match(/(?:até|máximo|max|valor\s+)?(?:de\s+)?(?:r\$\s*)?(\d{4,})/);
   if (num) return parseInt(num[1].replace(/\D/g, ""), 10);
   return undefined;
+}
+
+/** Extrai ID da tarefa para concluir. Ex.: "concluir tarefa 2", "marcar tarefa 3 como feita" */
+function extractCompleteTaskId(text: string): number | null {
+  const m = text.match(/(?:concluir|marcar|finalizar)\s+tarefa\s+(\d+)/i) ?? text.match(/tarefa\s+(\d+)\s+(?:concluída|feita|finalizada)/i);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+/** Extrai ID do contato. Ex.: "contato 2", "detalhes do contato 3", "ver contato 1" */
+function extractContactId(text: string): number | null {
+  const m = text.match(/\bcontato\s+(\d+)\b/i) ?? text.match(/(?:detalhes?|ver)\s+contato\s+(\d+)/i);
+  return m ? parseInt(m[1], 10) : null;
 }
 
 /** Extrai título (e opcionalmente data) para criar tarefa. Ex.: "criar tarefa: Ligar amanhã" */

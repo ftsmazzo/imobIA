@@ -45,6 +45,20 @@ def _backend_post(path: str, json_body: dict, key: str) -> tuple[int, dict | lis
         return 0, {}
 
 
+def _backend_patch(path: str, json_body: dict, key: str) -> tuple[int, dict | list]:
+    """PATCH no backend interno. Retorna (status, body)."""
+    import httpx
+    base = (__import__("os").environ.get("BACKEND_API_URL") or "").rstrip("/")
+    if not base or not key:
+        return 0, {}
+    url = f"{base}{path}"
+    try:
+        r = httpx.patch(url, json=json_body, headers={"X-Internal-Key": key}, timeout=15.0)
+        return r.status_code, r.json() if r.content else {}
+    except Exception:
+        return 0, {}
+
+
 def _get(p: dict, *keys: str):
     """Retorna o primeiro valor presente (camel ou snake_case)."""
     for k in keys:
@@ -191,6 +205,33 @@ def _get_mcp_app():
         return f"Contatos ({n}):\n" + "\n".join(lines)
 
     @mcp.tool()
+    def get_contact(contact_id: int, tenant_id: int = 1) -> str:
+        """Retorna detalhes de um contato (nome, telefone, email, origem, notas)."""
+        if not use_backend:
+            return "Backend não configurado (BACKEND_API_URL e BACKEND_INTERNAL_KEY)."
+        status, data = _backend_fetch(
+            f"/api/internal/contacts/{contact_id}",
+            {"tenant_id": tenant_id},
+            internal_key,
+        )
+        if status == 404:
+            return f"Contato {contact_id} não encontrado."
+        if status != 200 or not isinstance(data, dict):
+            return f"Erro ao buscar contato (status {status})."
+        c = data
+        name = _get(c, "name") or "Sem nome"
+        phone = _get(c, "phone") or ""
+        email = _get(c, "email") or ""
+        source = _get(c, "source") or ""
+        notes = (_get(c, "notes") or "").strip()
+        lines = [f"{name}", f"Telefone: {phone}", f"Email: {email}" if email else ""]
+        if source:
+            lines.append(f"Origem: {source}")
+        if notes:
+            lines.append(f"Observações: {notes}")
+        return "\n".join(filter(None, lines))
+
+    @mcp.tool()
     def list_tasks(tenant_id: int = 1, limit: int = 15) -> str:
         """Lista tarefas do tenant (título, tipo, data, concluída ou não)."""
         if not use_backend:
@@ -256,6 +297,23 @@ def _get_mcp_app():
         if isinstance(data, dict) and data.get("id"):
             return f"Tarefa criada: \"{_get(data, 'title') or title}\" (id={data['id']})."
         return "Tarefa criada."
+
+    @mcp.tool()
+    def complete_task(task_id: int, tenant_id: int = 1) -> str:
+        """Marca uma tarefa como concluída."""
+        if not use_backend:
+            return "Backend não configurado (BACKEND_API_URL e BACKEND_INTERNAL_KEY)."
+        status, data = _backend_patch(
+            f"/api/internal/tasks/{task_id}",
+            {"tenant_id": tenant_id},
+            internal_key,
+        )
+        if status == 404:
+            return f"Tarefa {task_id} não encontrada."
+        if status != 200:
+            return f"Erro ao concluir tarefa (status {status})."
+        title = _get(data, "title") if isinstance(data, dict) else ""
+        return f"Tarefa concluída: \"{title}\"." if title else "Tarefa concluída."
 
     _mcp_asgi = mcp.http_app(stateless_http=True)
     return _mcp_asgi
