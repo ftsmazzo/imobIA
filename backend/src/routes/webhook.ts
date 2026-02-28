@@ -45,8 +45,19 @@ router.post("/message", async (req, res) => {
       const result = await callMcpTool("get_property", { property_id: id, tenant_id: tenant });
       reply = result.isError ? `Erro: ${result.text}` : result.text;
     } else {
-      reply =
-        "Não entendi. Você pode: \"buscar imóveis\" (ou até 500 mil), um número para ver imóvel, ou \"contatos\" para listar leads.";
+      const taskPayload = extractTaskFromMessage(text);
+      if (taskPayload) {
+        const { title, due_at } = taskPayload;
+        const result = await callMcpTool("create_task", {
+          tenant_id: tenant,
+          title,
+          ...(due_at ? { due_at } : {}),
+        });
+        reply = result.isError ? `Erro: ${result.text}` : result.text;
+      } else {
+        reply =
+          "Não entendi. Você pode: \"buscar imóveis\", um número para ver imóvel, \"contatos\", ou \"criar tarefa: Ligar para João\".";
+      }
     }
 
     console.log(`[webhook] from=${fromId} message="${text.slice(0, 50)}" reply_len=${reply.length}`);
@@ -90,6 +101,29 @@ function extractMaxValue(text: string): number | undefined {
   const num = lower.match(/(?:até|máximo|max|valor\s+)?(?:de\s+)?(?:r\$\s*)?(\d{4,})/);
   if (num) return parseInt(num[1].replace(/\D/g, ""), 10);
   return undefined;
+}
+
+/** Extrai título (e opcionalmente data) para criar tarefa. Ex.: "criar tarefa: Ligar amanhã" */
+function extractTaskFromMessage(
+  text: string
+): { title: string; due_at?: string } | null {
+  const match = text.match(
+    /(?:criar\s+tarefa|agendar|nova\s+tarefa|lembrete)\s*[:\-]?\s*(.+)/i
+  );
+  if (!match) return null;
+  let title = match[1].trim();
+  if (!title) return null;
+  let due_at: string | undefined;
+  const amanha = /\bamanh[ãa]\b/i;
+  if (amanha.test(title)) {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    d.setHours(9, 0, 0, 0);
+    due_at = d.toISOString();
+    title = title.replace(amanha, "").replace(/\s+/g, " ").trim();
+  }
+  if (!title) title = "Tarefa";
+  return { title, ...(due_at ? { due_at } : {}) };
 }
 
 export default router;

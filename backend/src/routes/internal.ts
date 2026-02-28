@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { eq, and, desc, asc, ilike, or, lte } from "drizzle-orm";
 import { db } from "../db/index.js";
-import { properties, propertyPhotos, contacts } from "../db/schema.js";
+import { properties, propertyPhotos, contacts, tasks } from "../db/schema.js";
 
 const router = Router();
 
@@ -132,6 +132,46 @@ router.get("/contacts", async (req, res) => {
   } catch (err) {
     console.error("[internal/contacts]", err);
     res.status(500).json({ error: "Erro ao listar contatos" });
+  }
+});
+
+/**
+ * POST /api/internal/tasks
+ * Body: tenant_id (obrigatório), title, type?, contact_id?, property_id?, due_at?, notes?
+ * Cria tarefa para uso pelo MCP (chat).
+ */
+router.post("/tasks", async (req, res) => {
+  try {
+    const body = req.body as Record<string, unknown>;
+    const tenantId = Number(body.tenant_id);
+    if (!Number.isInteger(tenantId) || tenantId < 1) {
+      res.status(400).json({ error: "tenant_id obrigatório e deve ser inteiro positivo" });
+      return;
+    }
+    const title = typeof body.title === "string" && body.title.trim() ? body.title.trim() : "Tarefa";
+    const type = typeof body.type === "string" ? body.type : null;
+    const contactId = Number(body.contact_id);
+    const propertyId = Number(body.property_id);
+    const dueAt = typeof body.due_at === "string" && body.due_at ? new Date(body.due_at) : null;
+    const notes = typeof body.notes === "string" ? body.notes : null;
+
+    const [task] = await db
+      .insert(tasks)
+      .values({
+        tenantId,
+        title: title.slice(0, 255),
+        type: type || null,
+        contactId: Number.isInteger(contactId) && contactId > 0 ? contactId : null,
+        propertyId: Number.isInteger(propertyId) && propertyId > 0 ? propertyId : null,
+        dueAt: dueAt && !Number.isNaN(dueAt.getTime()) ? dueAt : null,
+        notes,
+      })
+      .returning();
+
+    res.status(201).json(task);
+  } catch (err) {
+    console.error("[internal/tasks]", err);
+    res.status(500).json({ error: "Erro ao criar tarefa" });
   }
 });
 
