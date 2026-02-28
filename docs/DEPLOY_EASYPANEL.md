@@ -64,7 +64,16 @@ Configure conforme **[ENV.md](./ENV.md)**:
 
 ---
 
-## 5. Regra de atualização
+## 5. Troubleshooting — MCP Server reiniciando
+
+Se o **mcp-server** ficar em loop (logs: "Shutting down", "Application shutdown complete"):
+
+1. **Escuta em 0.0.0.0** — o código já usa `host="0.0.0.0"` para aceitar conexões de outros containers.
+2. **Health check** — no EasyPanel, o serviço **mcp-server** pode ter um health check que faz GET na raiz (`/`). O MCP só expõe `/mcp`. Se o health check falhar, o painel reinicia o container. **Solução:** desative o health check do mcp-server ou configure para um path que exista (ou desative temporariamente para testar).
+
+---
+
+## 6. Regra de atualização
 
 - **Cursor (IA):** faz **commit + push** no GitHub após alterações.
 - **Você (Fred):** faz **implantar** no EasyPanel o que foi enviado ao GitHub.

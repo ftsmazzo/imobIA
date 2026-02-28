@@ -37,4 +37,5 @@ def get_property(property_id: int) -> str:
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8000"))
-    mcp.run(transport="http", port=port)
+    # host="0.0.0.0" para aceitar conexões de outros containers (backend)
+    mcp.run(transport="http", host="0.0.0.0", port=port)
