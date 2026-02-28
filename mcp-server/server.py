@@ -5,6 +5,7 @@ FastMCP é carregado na primeira requisição POST /mcp (evita timeout de health
 """
 
 import sys
+import traceback
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="websockets")
 
@@ -58,16 +59,19 @@ async def _asgi_app(scope, receive, send):
 
     # FastMCP espera ser montado em /mcp e receber path="/" (não path="/mcp")
     if path == "/mcp" or path == "mcp":
-        mcp_scope = dict(scope)
-        mcp_scope["path"] = "/"
-        mcp_scope["root_path"] = scope.get("root_path", "") + "/mcp"
+        mcp_scope = {**scope, "path": "/"}
         scope = mcp_scope
 
     try:
         await _get_mcp_app()(scope, receive, send)
-    except Exception:
-        await send({"type": "http.response.start", "status": 500, "headers": [[b"content-type", b"text/plain"]]})
-        await send({"type": "http.response.body", "body": b"Internal Server Error"})
+    except Exception as e:
+        traceback.print_exc()
+        sys.stderr.flush()
+        try:
+            await send({"type": "http.response.start", "status": 500, "headers": [[b"content-type", b"text/plain"]]})
+            await send({"type": "http.response.body", "body": b"Internal Server Error"})
+        except Exception:
+            pass
 
 
 def main():
