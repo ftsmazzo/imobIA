@@ -13,27 +13,54 @@ type Property = {
   status: string;
 };
 
+const TIPOS = [
+  { value: "", label: "Todos os tipos" },
+  { value: "apartment", label: "Apartamento" },
+  { value: "house", label: "Casa" },
+  { value: "land", label: "Terreno" },
+  { value: "commercial", label: "Comercial" },
+];
+
 export default function Imoveis() {
   const { token } = useAuth();
   const [list, setList] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [tipo, setTipo] = useState("");
 
   useEffect(() => {
-    apiFetch("/api/properties", { token: token ?? undefined })
+    const url = tipo ? `/api/properties?type=${encodeURIComponent(tipo)}` : "/api/properties";
+    setLoading(true);
+    setError(null);
+    apiFetch(url, { token: token ?? undefined })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("Erro ao carregar"))))
       .then(setList)
       .catch(() => setError("Erro ao carregar imóveis"))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, tipo]);
 
-  if (loading) return <p>Carregando…</p>;
   if (error) return <p style={{ color: "#c00" }}>{error}</p>;
 
   return (
     <div>
       <h1 style={{ margin: "0 0 1rem", fontSize: "1.5rem" }}>Imóveis</h1>
-      {list.length === 0 ? (
+      <div style={{ marginBottom: "1rem" }}>
+        <label style={{ marginRight: "0.5rem", fontSize: "0.9rem", color: "#666" }}>Tipo: </label>
+        <select
+          value={tipo}
+          onChange={(e) => setTipo(e.target.value)}
+          style={{ padding: "0.4rem 0.75rem", borderRadius: 6, border: "1px solid #ccc", fontSize: "0.95rem" }}
+        >
+          {TIPOS.map((opt) => (
+            <option key={opt.value || "all"} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      {loading ? (
+        <p>Carregando…</p>
+      ) : list.length === 0 ? (
         <p style={{ color: "#666" }}>Nenhum imóvel cadastrado.</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>

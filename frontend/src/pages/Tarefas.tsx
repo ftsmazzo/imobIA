@@ -29,13 +29,34 @@ export default function Tarefas() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadTasks = () => {
+    setLoading(true);
+    setError(null);
     apiFetch("/api/tasks", { token: token ?? undefined })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("Erro ao carregar"))))
       .then(setList)
       .catch(() => setError("Erro ao carregar tarefas"))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadTasks();
   }, [token]);
+
+  async function handleComplete(id: number) {
+    if (!token) return;
+    try {
+      const r = await apiFetch(`/api/tasks/${id}`, {
+        method: "PATCH",
+        token,
+        body: JSON.stringify({ completedAt: new Date().toISOString() }),
+      });
+      if (r.ok) setList((prev) => prev.map((t) => (t.id === id ? { ...t, completedAt: new Date().toISOString() } : t)));
+      else loadTasks();
+    } catch {
+      loadTasks();
+    }
+  }
 
   if (loading) return <p>Carregando…</p>;
   if (error) return <p style={{ color: "#c00" }}>{error}</p>;
@@ -58,7 +79,7 @@ export default function Tarefas() {
                 opacity: t.completedAt ? 0.85 : 1,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
                 <span style={{ color: t.completedAt ? "#0a0" : "#666", fontSize: "1.1rem" }}>
                   {t.completedAt ? "✓" : "○"}
                 </span>
@@ -67,6 +88,15 @@ export default function Tarefas() {
                   <span style={{ fontSize: "0.8rem", color: "#888", background: "#eee", padding: "0.2rem 0.5rem", borderRadius: 4 }}>
                     {t.type}
                   </span>
+                )}
+                {!t.completedAt && (
+                  <button
+                    type="button"
+                    onClick={() => handleComplete(t.id)}
+                    style={styles.completeBtn}
+                  >
+                    Concluir
+                  </button>
                 )}
               </div>
               {(t.dueAt || t.notes) && (
@@ -84,3 +114,16 @@ export default function Tarefas() {
     </div>
   );
 }
+
+const styles: Record<string, React.CSSProperties> = {
+  completeBtn: {
+    marginLeft: "auto",
+    padding: "0.35rem 0.75rem",
+    fontSize: "0.85rem",
+    background: "#0f3460",
+    color: "#fff",
+    border: "none",
+    borderRadius: 6,
+    cursor: "pointer",
+  },
+};
