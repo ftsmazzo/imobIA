@@ -55,6 +55,7 @@ export default function Login() {
             {loading ? "Entrando…" : "Entrar"}
           </button>
         </form>
+        <p style={styles.demoHint}>Demo: <code>admin@demo.com</code> / <code>admin123</code></p>
       </div>
     </div>
   );
@@ -111,5 +112,13 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "1rem",
     fontWeight: 600,
     cursor: "pointer",
+  },
+  demoHint: {
+    margin: "1.25rem 0 0",
+    padding: "0.75rem",
+    background: "#f5f5f5",
+    borderRadius: 8,
+    fontSize: "0.85rem",
+    color: "#555",
   },
 };

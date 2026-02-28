@@ -47,6 +47,31 @@ Cada pasta (**backend**, **frontend**, **mcp-server**) tem **Dockerfile** própr
 2. Aplicar o schema em um PostgreSQL (ou gerar migrations a partir de `docs/schema/schema.sql`).
 3. Desenvolver na ordem: **backend** (auth, CRM mínimo, webhook) → **mcp-server** (tools) → **frontend** (login, CRM).
 
+## Acesso demo
+
+Após o seed (primeira subida do backend), existe um tenant e usuário de demonstração:
+
+| Campo    | Valor           |
+|----------|-----------------|
+| **Login** | `admin@demo.com` |
+| **Senha** | `admin123`       |
+
+Use no **frontend** (login) ou para testar a API. O tenant demo tem imóveis e contatos de exemplo.
+
+## Comandos do chat (webhook)
+
+No **POST /api/webhook/message** (ou integração Evolution/ChatWoot), o usuário pode enviar:
+
+| Mensagem | Ação |
+|----------|------|
+| `buscar imóveis` / `buscar até 500 mil` | Lista imóveis (com filtro de valor opcional) |
+| `1` (só o número) | Detalhes do imóvel 1 |
+| `contatos` | Lista contatos/leads |
+| `contato 2` | Detalhes do contato 2 |
+| `tarefas` | Lista tarefas |
+| `concluir tarefa 2` | Marca tarefa 2 como concluída |
+| `criar tarefa: Ligar para João` | Cria tarefa (aceita "amanhã" para data) |
+
 ## Ambiente
 
 - Deploy: **EasyPanel** (VPS); repositórios no **GitHub**.

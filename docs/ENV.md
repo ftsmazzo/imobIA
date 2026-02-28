@@ -39,7 +39,7 @@ postgresql://postgres:SUA_SENHA@postgres:5432/plataforma_imobiliaria
 | `PORT` | Não | Porta HTTP (padrão: 3000) | `3000` |
 | `NODE_ENV` | Não | `development` ou `production` | `production` |
 
-**Schema e seed:** rodam **automaticamente** no startup do container (entrypoint). Seed cria planos e, se não houver usuários, um tenant + admin (admin@demo.com / admin123). Defina **JWT_SECRET** no EasyPanel em produção.
+**Schema e seed:** rodam **automaticamente** no startup do container (entrypoint). Seed cria planos e, se não houver usuários, um tenant + admin. **Acesso demo:** `admin@demo.com` / `admin123`. Defina **JWT_SECRET** no EasyPanel em produção.
 
 ---
 
