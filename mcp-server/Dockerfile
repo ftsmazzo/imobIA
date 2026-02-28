@@ -13,5 +13,8 @@ COPY mcp-server/server.py ./
 ENV PORT=8000
 EXPOSE 8000
 
-# Processo único: python server.py (uvicorn roda dentro, bloqueia). -u = stdout sem buffer.
+# Docker: start-period 40s = não falhar nos primeiros 40s; depois GET / a cada 30s
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+  CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/')"]
+
 CMD ["python", "-u", "server.py"]
