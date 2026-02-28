@@ -40,14 +40,36 @@ async function mcpPost(
 
   const text = await res.text();
   let data: unknown;
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    if (!res.ok) throw new Error(`MCP retornou ${res.status}: ${text.slice(0, 200)}`);
-    throw new Error(`MCP resposta inválida (não JSON): ${text.slice(0, 200)}`);
+  const contentType = res.headers.get("content-type") ?? "";
+  if (contentType.includes("text/event-stream")) {
+    data = parseSSE(text);
+  } else {
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      if (!res.ok) throw new Error(`MCP retornou ${res.status}: ${text.slice(0, 200)}`);
+      throw new Error(`MCP resposta inválida (não JSON): ${text.slice(0, 200)}`);
+    }
   }
-
   return { res, data };
+}
+
+/** Extrai JSON-RPC de resposta SSE (event: message \\n data: {...}). */
+function parseSSE(text: string): unknown {
+  const lines = text.split(/\r?\n/);
+  let last: unknown = null;
+  for (const line of lines) {
+    if (line.startsWith("data:")) {
+      const raw = line.slice(5).trim();
+      if (raw === "[DONE]" || !raw) continue;
+      try {
+        last = JSON.parse(raw);
+      } catch {
+        // ignora linha data inválida
+      }
+    }
+  }
+  return last;
 }
 
 /**
@@ -61,16 +83,20 @@ async function ensureSession(url: string): Promise<string | null> {
     id: 1,
     method: "initialize",
     params: {
-      clientInfo: { name: "backend-webhook", version: "0.1" },
       protocolVersion: "2025-03-26",
+      capabilities: {},
+      clientInfo: { name: "backend-webhook", version: "0.1" },
     },
   };
 
   const { res, data } = await mcpPost(url, initBody, null);
 
+  const rpcError = (data as { error?: { message?: string } })?.error;
   if (!res.ok) {
-    const msg = (data as { error?: { message?: string } })?.error?.message ?? res.statusText;
-    throw new Error(`MCP initialize falhou (${res.status}): ${msg}`);
+    throw new Error(`MCP initialize falhou (${res.status}): ${rpcError?.message ?? res.statusText}`);
+  }
+  if (rpcError) {
+    throw new Error(`MCP initialize: ${rpcError.message}`);
   }
 
   const sessionId = res.headers.get("mcp-session-id") ?? res.headers.get("Mcp-Session-Id") ?? null;
