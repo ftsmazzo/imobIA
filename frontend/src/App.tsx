@@ -9,6 +9,7 @@ import Imoveis from "./pages/Imoveis";
 import ImovelDetalhe from "./pages/ImovelDetalhe";
 import Contatos from "./pages/Contatos";
 import ContatoDetalhe from "./pages/ContatoDetalhe";
+import Pipeline from "./pages/Pipeline";
 import Tarefas from "./pages/Tarefas";
 
 export default function App() {
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="imoveis/:id" element={<ImovelDetalhe />} />
           <Route path="contatos" element={<Contatos />} />
           <Route path="contatos/:id" element={<ContatoDetalhe />} />
+          <Route path="pipeline" element={<Pipeline />} />
           <Route path="tarefas" element={<Tarefas />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
