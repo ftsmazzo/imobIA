@@ -53,6 +53,8 @@ const styles: Record<string, React.CSSProperties> = {
   wrapper: {
     display: "flex",
     minHeight: "100vh",
+    width: "100%",
+    overflowX: "hidden",
   },
   sidebar: {
     width: 220,
@@ -104,6 +106,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   main: {
     flex: 1,
+    minWidth: 0,
     padding: "1.5rem 2rem",
     overflow: "auto",
     background: "#f5f5f5",
