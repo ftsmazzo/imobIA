@@ -29,6 +29,10 @@ export default function Tarefas() {
   const [list, setList] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [form, setForm] = useState({ title: "", dueAt: "", notes: "" });
 
   const loadTasks = () => {
     setLoading(true);
@@ -59,19 +63,75 @@ export default function Tarefas() {
     }
   }
 
+  async function handleSubmitTarefa(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token || !form.title.trim()) {
+      setFormError("Título é obrigatório");
+      return;
+    }
+    setFormError(null);
+    setSaving(true);
+    try {
+      const r = await apiFetch("/api/tasks", {
+        method: "POST",
+        token,
+        body: JSON.stringify({
+          title: form.title.trim(),
+          ...(form.dueAt ? { dueAt: new Date(form.dueAt).toISOString() } : {}),
+          ...(form.notes.trim() ? { notes: form.notes.trim() } : {}),
+        }),
+      });
+      if (!r.ok) throw new Error("Erro ao criar");
+      setShowForm(false);
+      setForm({ title: "", dueAt: "", notes: "" });
+      loadTasks();
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Erro ao criar tarefa");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (loading) return <p>Carregando…</p>;
   if (error) return <p style={{ color: "#c00" }}>{error}</p>;
 
   return (
     <div>
       <h1 style={{ margin: "0 0 0.5rem", fontSize: "1.5rem" }}>Tarefas</h1>
-      <div style={{ background: "#e8eef4", padding: "1rem 1.25rem", borderRadius: 10, marginBottom: "1.25rem", border: "1px solid #c5d5e8" }}>
-        <span style={{ fontSize: "0.95rem", color: "#333", marginRight: "0.75rem" }}>Tarefas pendentes aparecem aqui. Para criar, use o chat: &quot;criar tarefa: Ligar para João&quot;</span>
+      <div style={{ background: "#e8eef4", padding: "1rem 1.25rem", borderRadius: 10, marginBottom: "1rem", border: "1px solid #c5d5e8", display: "flex", alignItems: "center", flexWrap: "wrap", gap: "0.75rem" }}>
+        <Button variant="primary" onClick={() => { setShowForm(!showForm); setFormError(null); }}>
+          {showForm ? "Cancelar" : "+ Nova tarefa"}
+        </Button>
+        <span style={{ fontSize: "0.95rem", color: "#333" }}>Ou crie pelo chat: &quot;criar tarefa: Ligar para João&quot;</span>
       </div>
+      {showForm && (
+        <form onSubmit={handleSubmitTarefa} style={{ background: "#fff", padding: "1.25rem", borderRadius: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.08)", marginBottom: "1.25rem", maxWidth: 420 }}>
+          <h3 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>Nova tarefa</h3>
+          {formError && <p style={{ color: "#c00", margin: "0 0 0.5rem", fontSize: "0.9rem" }}>{formError}</p>}
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <div>
+              <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.9rem" }}>Título *</label>
+              <input type="text" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Ex: Ligar para o cliente" required style={{ width: "100%", padding: "0.5rem", borderRadius: 6, border: "1px solid #ccc" }} />
+            </div>
+            <div>
+              <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.9rem" }}>Data limite (opcional)</label>
+              <input type="datetime-local" value={form.dueAt} onChange={(e) => setForm((f) => ({ ...f, dueAt: e.target.value }))} style={{ width: "100%", padding: "0.5rem", borderRadius: 6, border: "1px solid #ccc" }} />
+            </div>
+            <div>
+              <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.9rem" }}>Observações (opcional)</label>
+              <textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Detalhes da tarefa" style={{ width: "100%", padding: "0.5rem", borderRadius: 6, border: "1px solid #ccc", resize: "vertical" }} />
+            </div>
+            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
+              <Button type="submit" variant="primary" disabled={saving}>{saving ? "Salvando…" : "Criar tarefa"}</Button>
+              <Button type="button" variant="secondary" onClick={() => { setShowForm(false); setFormError(null); }}>Cancelar</Button>
+            </div>
+          </div>
+        </form>
+      )}
       {list.length === 0 ? (
         <div style={{ background: "#fff", padding: "1.5rem", borderRadius: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.08)", textAlign: "center" }}>
           <p style={{ color: "#666", margin: "0 0 1rem" }}>Nenhuma tarefa cadastrada.</p>
-          <p style={{ color: "#888", fontSize: "0.9rem", margin: 0 }}>Crie pelo atendimento (webhook/chat): &quot;criar tarefa: Ligar para João&quot;</p>
+          <p style={{ color: "#888", fontSize: "0.9rem", margin: 0 }}>Clique em &quot;+ Nova tarefa&quot; acima ou crie pelo chat.</p>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
