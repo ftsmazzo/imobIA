@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
 import Button from "../components/Button";
@@ -30,6 +30,8 @@ function formatDate(s: string | null): string {
 }
 
 export default function Tarefas() {
+  const [searchParams] = useSearchParams();
+  const contactIdFromUrl = searchParams.get("contactId") ?? "";
   const { token, user } = useAuth();
   const [list, setList] = useState<Task[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -42,6 +44,10 @@ export default function Tarefas() {
   const [form, setForm] = useState({ title: "", contactId: "", assignedToId: "", dueAt: "", notes: "" });
   const [filterContactId, setFilterContactId] = useState("");
   const [filterAssignedToId, setFilterAssignedToId] = useState("");
+
+  useEffect(() => {
+    if (contactIdFromUrl) setFilterContactId(contactIdFromUrl);
+  }, [contactIdFromUrl]);
 
   const contactMap = Object.fromEntries(contacts.map((c) => [c.id, c.name || c.phone]));
   const userMap = Object.fromEntries(users.map((u) => [u.id, u.name || u.email]));

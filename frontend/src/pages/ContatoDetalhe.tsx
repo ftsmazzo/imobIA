@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
 import Button from "../components/Button";
 
 type Tag = { id: number; name: string; slug: string | null; color: string | null };
+
+type TaskItem = {
+  id: number;
+  title: string;
+  dueAt: string | null;
+  completedAt: string | null;
+};
 
 type ContactDetail = {
   id: number;
@@ -26,6 +33,7 @@ export default function ContatoDetalhe() {
   const { token } = useAuth();
   const [data, setData] = useState<ContactDetail | null>(null);
   const [stages, setStages] = useState<Stage[]>([]);
+  const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savingStage, setSavingStage] = useState(false);
@@ -50,6 +58,14 @@ export default function ContatoDetalhe() {
       .then(setData)
       .catch(() => setError("Contato não encontrado"))
       .finally(() => setLoading(false));
+  }, [id, token]);
+
+  useEffect(() => {
+    if (!id || !token) return;
+    apiFetch(`/api/tasks?contactId=${id}`, { token })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list) => setTasks(Array.isArray(list) ? list : []))
+      .catch(() => setTasks([]));
   }, [id, token]);
 
   const handleChangeStage = (stageId: string) => {
@@ -149,6 +165,26 @@ export default function ContatoDetalhe() {
             </p>
           </div>
         )}
+        <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid #eee" }}>
+          <strong style={{ fontSize: "0.9rem" }}>Tarefas deste contato</strong>
+          {tasks.length === 0 ? (
+            <p style={{ margin: "0.5rem 0 0", fontSize: "0.9rem", color: "#666" }}>Nenhuma tarefa vinculada.</p>
+          ) : (
+            <ul style={{ margin: "0.5rem 0 0", paddingLeft: "1.25rem" }}>
+              {tasks.map((t) => (
+                <li key={t.id} style={{ marginBottom: "0.25rem", fontSize: "0.95rem" }}>
+                  {t.completedAt ? "✓" : "○"} {t.title}
+                  {t.dueAt && <span style={{ color: "#888", marginLeft: "0.35rem" }}>({new Date(t.dueAt).toLocaleDateString("pt-BR")})</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+          <p style={{ margin: "0.5rem 0 0" }}>
+            <Link to={`/tarefas?contactId=${data.id}`} style={{ fontSize: "0.9rem", color: "#0f3460", textDecoration: "none" }}>
+              Ver todas as tarefas deste lead →
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
