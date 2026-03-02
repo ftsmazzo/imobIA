@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
 import Button from "../components/Button";
@@ -12,7 +13,11 @@ type Task = {
   notes: string | null;
   contactId: number | null;
   propertyId: number | null;
+  assignedToId: number | null;
 };
+
+type Contact = { id: number; name: string | null; phone: string };
+type UserItem = { id: number; name: string | null; email: string };
 
 function formatDate(s: string | null): string {
   if (!s) return "";
@@ -25,14 +30,19 @@ function formatDate(s: string | null): string {
 }
 
 export default function Tarefas() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [list, setList] = useState<Task[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [users, setUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [form, setForm] = useState({ title: "", dueAt: "", notes: "" });
+  const [form, setForm] = useState({ title: "", contactId: "", assignedToId: "", dueAt: "", notes: "" });
+
+  const contactMap = Object.fromEntries(contacts.map((c) => [c.id, c.name || c.phone]));
+  const userMap = Object.fromEntries(users.map((u) => [u.id, u.name || u.email]));
 
   const loadTasks = () => {
     setLoading(true);
@@ -46,6 +56,17 @@ export default function Tarefas() {
 
   useEffect(() => {
     loadTasks();
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    Promise.all([
+      apiFetch("/api/contacts", { token }).then((r) => (r.ok ? r.json() : [])),
+      apiFetch("/api/users", { token }).then((r) => (r.ok ? r.json() : [])),
+    ]).then(([c, u]) => {
+      setContacts(Array.isArray(c) ? c : []);
+      setUsers(Array.isArray(u) ? u : []);
+    });
   }, [token]);
 
   async function handleComplete(id: number) {
@@ -69,6 +90,10 @@ export default function Tarefas() {
       setFormError("Título é obrigatório");
       return;
     }
+    if (!form.contactId) {
+      setFormError("Lead (contato) é obrigatório");
+      return;
+    }
     setFormError(null);
     setSaving(true);
     try {
@@ -77,13 +102,15 @@ export default function Tarefas() {
         token,
         body: JSON.stringify({
           title: form.title.trim(),
+          contactId: Number(form.contactId),
+          assignedToId: form.assignedToId ? Number(form.assignedToId) : (user?.id ?? null),
           ...(form.dueAt ? { dueAt: new Date(form.dueAt).toISOString() } : {}),
           ...(form.notes.trim() ? { notes: form.notes.trim() } : {}),
         }),
       });
       if (!r.ok) throw new Error("Erro ao criar");
       setShowForm(false);
-      setForm({ title: "", dueAt: "", notes: "" });
+      setForm({ title: "", contactId: "", assignedToId: user?.id ? String(user.id) : "", dueAt: "", notes: "" });
       loadTasks();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Erro ao criar tarefa");
@@ -99,7 +126,7 @@ export default function Tarefas() {
     <div>
       <h1 style={{ margin: "0 0 0.5rem", fontSize: "1.5rem" }}>Tarefas</h1>
       <div style={{ background: "#e8eef4", padding: "1rem 1.25rem", borderRadius: 10, marginBottom: "1rem", border: "1px solid #c5d5e8", display: "flex", alignItems: "center", flexWrap: "wrap", gap: "0.75rem" }}>
-        <Button variant="primary" onClick={() => { setShowForm(!showForm); setFormError(null); }}>
+        <Button variant="primary" onClick={() => { setShowForm(!showForm); setFormError(null); if (!showForm && user?.id) setForm((f) => ({ ...f, assignedToId: String(user.id) })); }}>
           {showForm ? "Cancelar" : "+ Nova tarefa"}
         </Button>
         <span style={{ fontSize: "0.95rem", color: "#333" }}>Ou crie pelo chat: &quot;criar tarefa: Ligar para João&quot;</span>
@@ -109,6 +136,24 @@ export default function Tarefas() {
           <h3 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>Nova tarefa</h3>
           {formError && <p style={{ color: "#c00", margin: "0 0 0.5rem", fontSize: "0.9rem" }}>{formError}</p>}
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <div>
+              <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.9rem" }}>Lead (contato) *</label>
+              <select value={form.contactId} onChange={(e) => setForm((f) => ({ ...f, contactId: e.target.value }))} required style={{ width: "100%", padding: "0.5rem", borderRadius: 6, border: "1px solid #ccc" }}>
+                <option value="">— Selecione o lead —</option>
+                {contacts.map((c) => (
+                  <option key={c.id} value={String(c.id)}>{c.name || c.phone} ({c.phone})</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.9rem" }}>Responsável (quem executa)</label>
+              <select value={form.assignedToId} onChange={(e) => setForm((f) => ({ ...f, assignedToId: e.target.value }))} style={{ width: "100%", padding: "0.5rem", borderRadius: 6, border: "1px solid #ccc" }}>
+                <option value="">— Eu (usuário logado) —</option>
+                {users.map((u) => (
+                  <option key={u.id} value={String(u.id)}>{u.name || u.email}</option>
+                ))}
+              </select>
+            </div>
             <div>
               <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.9rem" }}>Título *</label>
               <input type="text" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Ex: Ligar para o cliente" required style={{ width: "100%", padding: "0.5rem", borderRadius: 6, border: "1px solid #ccc" }} />
@@ -151,6 +196,14 @@ export default function Tarefas() {
                   {t.completedAt ? "✓" : "○"}
                 </span>
                 <strong>{t.title}</strong>
+                {t.contactId && contactMap[t.contactId] && (
+                  <Link to={`/contatos/${t.contactId}`} style={{ fontSize: "0.85rem", color: "#0f3460", textDecoration: "none" }}>
+                    👤 {contactMap[t.contactId]}
+                  </Link>
+                )}
+                {t.assignedToId && userMap[t.assignedToId] && (
+                  <span style={{ fontSize: "0.8rem", color: "#666" }}>→ {userMap[t.assignedToId]}</span>
+                )}
                 {t.type && (
                   <span style={{ fontSize: "0.8rem", color: "#888", background: "#eee", padding: "0.2rem 0.5rem", borderRadius: 4 }}>
                     {t.type}

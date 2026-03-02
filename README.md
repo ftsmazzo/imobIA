@@ -58,6 +58,10 @@ Após o seed (primeira subida do backend), existe um tenant e usuário de demons
 
 Use no **frontend** (login) ou para testar a API. O tenant demo tem imóveis e contatos de exemplo.
 
+## Regras de negócio (CRM)
+
+- **Tarefas não podem ser soltas**: toda tarefa deve estar vinculada a um **lead (contato)** e, preferencialmente, a um **responsável (usuário)** que executa. Isso permite saber o que foi executado e por quem.
+
 ## Comandos do chat (webhook)
 
 No **POST /api/webhook/message** (ou integração Evolution/ChatWoot), o usuário pode enviar:
