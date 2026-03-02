@@ -40,6 +40,8 @@ export default function Tarefas() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [form, setForm] = useState({ title: "", contactId: "", assignedToId: "", dueAt: "", notes: "" });
+  const [filterContactId, setFilterContactId] = useState("");
+  const [filterAssignedToId, setFilterAssignedToId] = useState("");
 
   const contactMap = Object.fromEntries(contacts.map((c) => [c.id, c.name || c.phone]));
   const userMap = Object.fromEntries(users.map((u) => [u.id, u.name || u.email]));
@@ -47,7 +49,12 @@ export default function Tarefas() {
   const loadTasks = () => {
     setLoading(true);
     setError(null);
-    apiFetch("/api/tasks", { token: token ?? undefined })
+    const params = new URLSearchParams();
+    if (filterContactId) params.set("contactId", filterContactId);
+    if (filterAssignedToId) params.set("assignedToId", filterAssignedToId);
+    const qs = params.toString();
+    const url = qs ? `/api/tasks?${qs}` : "/api/tasks";
+    apiFetch(url, { token: token ?? undefined })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("Erro ao carregar"))))
       .then(setList)
       .catch(() => setError("Erro ao carregar tarefas"))
@@ -56,7 +63,7 @@ export default function Tarefas() {
 
   useEffect(() => {
     loadTasks();
-  }, [token]);
+  }, [token, filterContactId, filterAssignedToId]);
 
   useEffect(() => {
     if (!token) return;
@@ -130,6 +137,26 @@ export default function Tarefas() {
           {showForm ? "Cancelar" : "+ Nova tarefa"}
         </Button>
         <span style={{ fontSize: "0.95rem", color: "#333" }}>Ou crie pelo chat: &quot;criar tarefa: Ligar para João&quot;</span>
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", alignItems: "center", marginBottom: "1rem" }}>
+        <label style={{ fontSize: "0.9rem", color: "#666" }}>
+          Filtrar por lead:
+          <select value={filterContactId} onChange={(e) => setFilterContactId(e.target.value)} style={{ marginLeft: "0.35rem", padding: "0.4rem 0.5rem", borderRadius: 6, border: "1px solid #ccc" }}>
+            <option value="">Todos</option>
+            {contacts.map((c) => (
+              <option key={c.id} value={String(c.id)}>{c.name || c.phone}</option>
+            ))}
+          </select>
+        </label>
+        <label style={{ fontSize: "0.9rem", color: "#666" }}>
+          Filtrar por responsável:
+          <select value={filterAssignedToId} onChange={(e) => setFilterAssignedToId(e.target.value)} style={{ marginLeft: "0.35rem", padding: "0.4rem 0.5rem", borderRadius: 6, border: "1px solid #ccc" }}>
+            <option value="">Todos</option>
+            {users.map((u) => (
+              <option key={u.id} value={String(u.id)}>{u.name || u.email}</option>
+            ))}
+          </select>
+        </label>
       </div>
       {showForm && (
         <form onSubmit={handleSubmitTarefa} style={{ background: "#fff", padding: "1.25rem", borderRadius: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.08)", marginBottom: "1.25rem", maxWidth: 420 }}>
